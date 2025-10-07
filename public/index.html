@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Учёт перерывов (канбан)</title>
+<style>
+  :root{
+    --bg:#151922;--panel:#1d2330;--card:#262f40;--text:#e9edf4;--muted:#a2adbb;--accent:#7aa2ff;
+    --ok:#33d17a;--border:#414a60;--dash:#343c52;--timer:#b6f0b6;--btn:#2b3346;--btn-border:#3e4863;--btn-hover:#33405a;
+    --danger:#3a1f25;--danger-b:#6c2b37;--card-52:#2a3446;--border-52:#4a6183;--card-22:#342c3a;--border-22:#73507f;
+    --pill-shift-bg:#3b3317;--pill-shift-text:#f7e4a2;--pill-time-bg:#442a24;--pill-time-text:#ffd9cd;
+    --chip-bg:#222a3b;--chip-border:#51608a;--chip-hover:#2c3650;--card-shadow:0 6px 18px rgba(0,0,0,.25);--card-radius:14px}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+  .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(21,25,34,.95),rgba(21,25,34,.6));backdrop-filter:blur(6px)}
+  header{display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
+  button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
+  button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
+  .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
+  .board{display:flex;gap:16px;padding:10px 16px 16px;overflow-x:auto}
+  .col{min-width:280px;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:10px;display:flex;flex-direction:column}
+  .drop{flex:1;min-height:520px;padding:6px;border-radius:12px}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--card-radius);padding:10px;margin:8px;cursor:grab;box-shadow:var(--card-shadow)}
+  .card.dragging{opacity:.65;transform:scale(.98)}.card.disabled{cursor:not-allowed;opacity:.85}
+  .card.shift-52{background:var(--card-52);border-color:var(--border-52)}.card.shift-22{background:var(--card-22);border-color:var(--border-22)}
+  .img-hero{margin:-10px -10px 8px}.img-hero img{width:100%;display:block;border-radius:var(--card-radius) var(--card-radius) 0 0;border:0}
+  .name{font-weight:700;display:flex;align-items:center;gap:10px}.meta{color:var(--muted);font-size:12px;margin-top:4px}
+  .timer{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--timer)}
+  .pills{display:flex;align-items:center;gap:8px;margin-top:8px}.pill{display:inline-flex;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px}
+  .pill.shift{background:var(--pill-shift-bg);color:var(--pill-shift-text)}.pill.time{background:var(--pill-time-bg);color:var(--pill-time-text)}
+  .pill-upload{background:var(--btn);border:1px solid var(--btn-border);color:var(--muted);border-radius:999px;padding:4px 8px}
+  .sum{margin-top:8px;font-size:12px;color:var(--muted)} .sum td{padding:2px 0}.sum td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+  .footer{padding:8px 16px;color:var(--muted);font-size:12px}.hidden{display:none}
+</style>
+</head>
+<body data-theme="dark">
+
+<!-- LOGIN -->
+<div id="login">
+  <div class="box" style="max-width:420px;margin:80px auto;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:18px">
+    <h1 style="margin:0 0 8px 0;font-size:20px">Вход по коду</h1>
+    <p style="margin:0 0 12px 0;color:var(--muted)">Введите ваш 6-значный код доступа.</p>
+    <div style="display:flex;gap:8px">
+      <input id="codeInput" inputmode="numeric" pattern="\\d{6}" maxlength="6" placeholder="000000"
+             style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--btn-border);background:var(--card);color:var(--text)"/>
+      <button id="btnDoLogin">Войти</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOP -->
+<div id="topbar" class="topbar hidden">
+  <header>
+    <div>Вы: <span id="who">…</span> <span class="badge" id="roleBadge">Оператор</span></div>
+    <div class="spacer"></div>
+    <select id="shiftFilter"><option value="all">Все смены</option></select>
+    <button id="btnReports" class="btn-chip hidden">Отчёты</button>
+    <button id="btnRefresh" class="btn-chip">Обновить</button>
+    <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
+    <button id="btnLogout" class="btn-chip">Выйти</button>
+  </header>
+  <div id="summary" class="summarybar hidden"></div>
+</div>
+
+<!-- BOARD -->
+<div id="appBoard" class="board hidden"></div>
+<div id="appFooter" class="footer hidden">Перетаскивайте карточки между колонками. Таймер — длительность текущего статуса.</div>
+
+<!-- REPORTS -->
+<div id="reports" class="hidden" style="padding:16px">
+  <div class="panel" style="background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:12px;margin-bottom:12px">
+    <label>Период:</label>
+    <input type="date" id="repFrom"> — <input type="date" id="repTo" style="margin-right:12px">
+    <label>Оператор:</label> <select id="repOperator" style="margin-right:12px"><option value="">Все</option></select>
+    <label>Тимлид:</label> <select id="repTeamlead" style="margin-right:12px"><option value="">Все</option></select>
+    <button id="btnBuildRep" class="btn-chip">Сформировать</button>
+    <span id="repStatus" style="margin-left:8px;color:var(--muted)"></span>
+  </div>
+  <div class="panel" style="background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:12px">
+    <table id="repTable" style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Оператор</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Тимлид</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Рабочее</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Перерыв</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Ожидание</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Обед</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const state = {
+  statuses:[], cards:[], session:null, serverOffsetMs:0, page:'board',
+  filterShift: localStorage.getItem('shiftFilter') || 'all', lastColumnsHash:{}
+};
+const MAX_DATAURL_LEN = 49000;
+
+// ============ API helper ============
+async function api(url, opts={}){
+  const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
+  if (!r.ok) throw new Error(await r.text());
+  return r.headers.get('content-type')?.includes('application/json') ? r.json() : r.text();
+}
+
+// ============ Session ============
+function applySession(sess){
+  state.session = sess;
+  document.getElementById('who').textContent = sess?.displayName || sess?.operatorId || '—';
+  document.getElementById('roleBadge').textContent = (sess?.role==='admin') ? 'Админ' : 'Оператор';
+  const isAdmin = sess?.role==='admin';
+  document.getElementById('btnNewDay').classList.toggle('hidden', !isAdmin);
+  document.getElementById('btnReports').classList.toggle('hidden', !isAdmin);
+}
+async function restoreSession(){
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  try { return await api('/api/session?token='+encodeURIComponent(token)); } catch { return null; }
+}
+
+// ============ Login ============
+document.getElementById('btnDoLogin').onclick = async ()=>{
+  const code = (document.getElementById('codeInput').value||'').trim();
+  try{
+    const sess = await api('/api/login',{method:'POST',body:JSON.stringify({code})});
+    localStorage.setItem('token', sess.token);
+    applySession(sess);
+    document.getElementById('login').style.display='none';
+    document.getElementById('topbar').classList.remove('hidden');
+    fullReload();
+  }catch(e){ alert('Код неверный'); }
+};
+document.getElementById('btnLogout').onclick = ()=>{
+  localStorage.removeItem('token'); location.reload();
+};
+
+// ============ Load/render ============
+async function fullReload(){ await load(); }
+async function load(){
+  const data = await api('/api/board');
+  if (data?.serverNowIso) state.serverOffsetMs = new Date(data.serverNowIso).getTime() - Date.now();
+  render(data);
+}
+function render(data){
+  state.statuses = data.statuses||[]; state.cards = data.cards||[];
+  updateFilters(state.cards); fillReportSelectors(state.cards);
+
+  const filtered = state.cards.filter(c=> matchesShiftFilter(c, state.filterShift));
+  const byStatus = {}; state.statuses.forEach(s=>byStatus[s]=[]);
+  filtered.forEach(c => (byStatus[c.status]||(byStatus[c.status]=[])).push(c));
+  state.statuses.forEach(s=>{
+    byStatus[s].sort((a,b)=>{
+      const ta = a.statusSince ? new Date(a.statusSince).getTime() : 0;
+      const tb = b.statusSince ? new Date(b.statusSince).getTime() : 0;
+      return (s==='Хочу в перерыв') ? (ta - tb) : (tb - ta);
+    });
+  });
+
+  renderSummary(byStatus); renderColumns(byStatus); tickTimers();
+
+  document.getElementById('summary').classList.remove('hidden');
+  document.getElementById('appBoard').classList.remove('hidden');
+  document.getElementById('appFooter').classList.remove('hidden');
+}
+function renderSummary(byStatus){
+  const summary = document.getElementById('summary'); summary.innerHTML='';
+  state.statuses.forEach(s=>{
+    const chip = document.createElement('div'); chip.className='chip';
+    chip.innerHTML = `<span>${s}</span><span class="count">${(byStatus[s]||[]).length}</span>`;
+    chip.onclick = async ()=>{
+      if (!state.session) return;
+      const myId = (state.session.operatorId||'').trim(); if (!myId) return;
+      await move(myId, s);
+    };
+    summary.appendChild(chip);
+  });
+}
+function hashColumn(cards){ return (cards||[]).map(c=>c.id+':' + (c.statusSince||'')).join('|'); }
+function renderColumns(byStatus){
+  const root = document.getElementById('appBoard');
+  if (!root.dataset.ready){
+    root.innerHTML='';
+    state.statuses.forEach(s=>{
+      const col = document.createElement('div'); col.className='col'; col.dataset.status=s;
+      col.innerHTML = `<h3 style="margin:6px 8px 10px">${s} <span class="count">0</span></h3><div class="drop" data-status="${s}"></div>`;
+      enableDrop(col.querySelector('.drop')); root.appendChild(col);
+    });
+    root.dataset.ready='1';
+  }
+  state.statuses.forEach(s=>{
+    const cards = byStatus[s]||[]; const newHash = hashColumn(cards);
+    const col = root.querySelector(`.col[data-status="${s.replace(/"/g,'\\"')}"]`); if (!col) return;
+    col.querySelector('.count').textContent = String(cards.length);
+    if (state.lastColumnsHash[s] === newHash) return;
+    state.lastColumnsHash[s] = newHash;
+    const drop = col.querySelector('.drop'); drop.innerHTML='';
+    cards.forEach(c => drop.appendChild(makeCard(c)));
+  });
+}
+function detectShiftClass(shift){ const s=String(shift||'').toLowerCase(); if(s==='5/2')return'shift-52'; if(s==='2/2')return'shift-22'; return''; }
+function makeCard(c){
+  const el = document.createElement('div');
+  el.className = 'card ' + detectShiftClass(c.shift);
+  const isAdmin = state.session?.role==='admin';
+  const sessId = (state.session?.operatorId||'').trim();
+  const cardId = String(c.id||'').trim();
+  const isOwn = sessId === cardId;
+  el.draggable = !!(isAdmin || isOwn); if (!el.draggable) el.classList.add('disabled');
+  el.dataset.id = cardId; el.dataset.status = c.status;
+  if (c.statusSince) el.dataset.since = c.statusSince; if (c.shiftStart) el.dataset.shiftStart = c.shiftStart;
+  const t = c.totals||{}; el.dataset.totalLine=t.totalLine||0; el.dataset.totalBreak=t.totalBreak||0; el.dataset.totalWait=t.totalWait||0; el.dataset.totalLunch=t.totalLunch||0;
+  const avatar = (c.images&&c.images.length)?c.images[c.images.length-1]:'';
+  el.innerHTML =
+    (avatar?`<div class="img-hero"><img src="${avatar}"></div>`:'')+
+    `<div class="name"><div>${esc(c.name)}</div><span class="timer"></span></div>`+
+    `<div class="meta">Тимлид: ${esc(c.teamlead||'—')}${c.role==='admin'?' · <span class="tag">Админ</span>':''}</div>`+
+    `<div class="pills">
+       ${c.shift?`<span class="pill shift">${esc(c.shift)}</span>`:''}
+       ${c.workHours?`<span class="pill time">${esc(c.workHours)}</span>`:''}
+       <button class="pill-upload" type="button">+ фото</button>
+     </div>`+
+    `<div class="sum"><table>
+       <tr><td>Рабочее время</td><td class="sum-line">00:00</td></tr>
+       <tr><td>Перерыв</td><td class="sum-break">00:00</td></tr>
+       <tr><td>Ожидание</td><td class="sum-wait">00:00</td></tr>
+       <tr><td>Обед</td><td class="sum-lunch">00:00</td></tr>
+     </table></div>
+     <div class="startline"><span class="start-text"></span></div>`;
+  el.querySelector('.pill-upload').onclick = ()=> triggerAddImage(cardId);
+  el.addEventListener('dragstart', e=>{ if(!el.draggable){e.preventDefault();return;} el.classList.add('dragging'); e.dataTransfer.setData('text/plain', cardId); });
+  el.addEventListener('dragend', ()=> el.classList.remove('dragging'));
+  return el;
+}
+function enableDrop(zone){
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.style.outline='2px dashed var(--accent)'; });
+  zone.addEventListener('dragleave', ()=> zone.style.outline='none');
+  zone.addEventListener('drop', async e=>{
+    e.preventDefault(); zone.style.outline='none';
+    const id = (e.dataTransfer.getData('text/plain')||'').trim(); if(!id) return;
+    const to = zone.dataset.status; await move(id,to);
+  });
+}
+async function move(operatorId, newStatus){
+  if (!state.session) return;
+  const id = String(operatorId||'').trim(); if (!id) return;
+  if (newStatus==='Выходной' && !confirm('Перевести в «Выходной»? Будут сброшены итоги и старт смены.')) return;
+  try{
+    await api('/api/move',{method:'POST',body:JSON.stringify({operatorId:id,newStatus,token:state.session.token,note:''})});
+    await load();
+  }catch(e){ console.warn('moveCard', e.message); }
+}
+
+// ============ Images ============
+async function triggerAddImage(operatorId){
+  if (!state.session) return;
+  const input = document.createElement('input'); input.type='file'; input.accept='image/*'; input.style.display='none';
+  input.onchange = async ()=>{
+    const f = input.files?.[0]; if (!f) return;
+    try{
+      const dataUrl = await readAndResizeImage(f, 480);
+      if (dataUrl.length >= MAX_DATAURL_LEN) { alert('Изображение слишком большое'); return; }
+      await api('/api/addImage',{method:'POST',body:JSON.stringify({operatorId, token:state.session.token, dataUrl})});
+      await load();
+    }catch(e){ console.warn('addImage', e.message); }
+    finally{ input.remove(); }
+  };
+  document.body.appendChild(input); input.click();
+}
+function readAndResizeImage(file, maxW){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader(); fr.onerror=()=>reject(new Error('FileReader error'));
+    fr.onload=()=>{ const img=new Image(); img.onerror=()=>reject(new Error('Bad image')); img.onload=()=>{
+      let w=img.width,h=img.height; if(w>maxW){const k=maxW/w; w=Math.max(1,Math.round(w*k)); h=Math.max(1,Math.round(h*k));}
+      let quality=0.8, mime='image/webp'; const test=document.createElement('canvas').toDataURL('image/webp',0.5); if(!/^data:image\/webp/i.test(test)) mime='image/jpeg';
+      let attempts=0; const minQ=0.4, minW=160;
+      while(attempts<40){
+        attempts++; const cvs=document.createElement('canvas'); cvs.width=w; cvs.height=h; const ctx=cvs.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+        let out=cvs.toDataURL(mime,quality); if(!/^data:image\/(webp|jpeg)/i.test(out)){ mime='image/jpeg'; out=cvs.toDataURL(mime,quality); }
+        if(out.length<MAX_DATAURL_LEN) return resolve(out);
+        if(quality>minQ+1e-3){ quality=Math.max(minQ, +(quality-0.1).toFixed(2)); }
+        else if(w>minW){ w=Math.max(minW,Math.round(w*0.85)); h=Math.max(1,Math.round(h*0.85)); quality=0.8; }
+        else break;
+      }
+      reject(new Error('Не удалось ужать изображение'));
+    }; img.src=fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+
+// ============ Timers / sums ============
+function tickTimers(){
+  const nowMs = Date.now() + (state.serverOffsetMs||0);
+  document.querySelectorAll('.card').forEach(el=>{
+    const since = el.dataset.since; const st = el.dataset.status;
+    let runningSec = 0; if (since && st!=='Выходной') runningSec = Math.max(0, Math.floor((nowMs - new Date(since).getTime())/1000));
+    const timerSpan = el.querySelector('.timer'); const txt = runningSec ? formatDuration(runningSec) : ''; if (timerSpan && timerSpan.textContent!==txt) timerSpan.textContent = txt;
+
+    const base = {
+      line: Number(el.dataset.totalLine||0),
+      brk:  Number(el.dataset.totalBreak||0),
+      wait: Number(el.dataset.totalWait||0),
+      lunch:Number(el.dataset.totalLunch||0)
+    };
+    if (st!=='Выходной'){
+      switch(st){
+        case 'Чаты': case 'Хочу в перерыв': case 'Звонки': case 'Обучение': base.line+=runningSec; break;
+        case 'Перерыв': case 'Перерыв на звонках': base.brk+=runningSec; break;
+        case 'Ожидание': case 'Ожидание Обед': base.wait+=runningSec; break;
+        case 'Обед': base.lunch+=runningSec; break;
+      }
+    }else{ base.line=base.brk=base.wait=base.lunch=0; }
+    renderSums(el, base); renderStartLine(el);
+  });
+}
+setInterval(tickTimers, 1000);
+function renderSums(el,b){
+  const s1=formatDuration(b.line), s2=formatDuration(b.brk), s3=formatDuration(b.wait), s4=formatDuration(b.lunch);
+  const a=el.querySelector('.sum-line'); if(a&&a.textContent!==s1)a.textContent=s1;
+  const b1=el.querySelector('.sum-break'); if(b1&&b1.textContent!==s2)b1.textContent=s2;
+  const c=el.querySelector('.sum-wait'); if(c&&c.textContent!==s3)c.textContent=s3;
+  const d=el.querySelector('.sum-lunch'); if(d&&d.textContent!==s4)d.textContent=s4;
+}
+function formatDuration(totalSec){ totalSec=Math.max(0,Math.floor(totalSec)); const hh=Math.floor(totalSec/3600), mm=Math.floor((totalSec%3600)/60), ss=totalSec%60; const pad=n=>(n<10?'0':'')+n; return (hh>0?pad(hh)+':':'')+pad(mm)+':'+pad(ss); }
+function esc(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]); }
+function renderStartLine(el){
+  const span=el.querySelector('.start-text'); if(!span) return;
+  const s=el.dataset.shiftStart; if(!s){ if(span.textContent!=='') span.textContent=''; return; }
+  const d=new Date(s); const now=new Date(Date.now()+(state.serverOffsetMs||0)); const pad=n=>(n<10?'0':'')+n;
+  const same = d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && d.getDate()===now.getDate();
+  const hhmm = pad(d.getHours())+':'+pad(d.getMinutes());
+  span.textContent = same ? ('Начал смену в '+hhmm) : ('Начал смену '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+' в '+hhmm);
+}
+
+// ============ Filters & Reports ============
+function updateFilters(cards){
+  const select = document.getElementById('shiftFilter'); const set = new Set();
+  (cards||[]).forEach(c=>{ const v=(c.workHours||'').trim(); if(v) set.add(v); });
+  const items = Array.from(set).sort((a,b)=>a.localeCompare(b,'ru'));
+  select.innerHTML = '<option value="all">Все смены</option>' + items.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  select.value = (items.includes(state.filterShift) ? state.filterShift : 'all');
+}
+document.getElementById('shiftFilter').onchange = (e)=>{ state.filterShift=e.target.value; localStorage.setItem('shiftFilter', state.filterShift); render({statuses:state.statuses,cards:state.cards,serverNowIso:new Date().toISOString()}); };
+function matchesShiftFilter(card, filter){ if(filter==='all') return true; const s=String(card.workHours||'').trim(); if(!s) return false; return s===filter; }
+
+function fillReportSelectors(cards){
+  const opSel=document.getElementById('repOperator'), tlSel=document.getElementById('repTeamlead');
+  const ops = Array.from(new Set(cards.map(c=>JSON.stringify({id:c.id,name:c.name})))) .map(s=>JSON.parse(s)) .sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  const tls = Array.from(new Set(cards.map(c=>c.teamlead).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'ru'));
+  opSel.innerHTML='<option value=\"\">Все</option>'+ops.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+  tlSel.innerHTML='<option value=\"\">Все</option>'+tls.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  const today = new Date(); const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  if(!document.getElementById('repFrom').value) document.getElementById('repFrom').value = iso(today);
+  if(!document.getElementById('repTo').value)   document.getElementById('repTo').value   = iso(today);
+}
+document.getElementById('btnBuildRep').onclick = async ()=>{
+  const from = document.getElementById('repFrom').value, to=document.getElementById('repTo').value;
+  const op=document.getElementById('repOperator').value, tl=document.getElementById('repTeamlead').value;
+  document.getElementById('repStatus').textContent='Считаю...';
+  try{
+    const data = await api(`/api/report?fromIso=${encodeURIComponent(new Date(from).toISOString())}&toIso=${encodeURIComponent(new Date(new Date(to).getTime()+24*3600*1000-1).toISOString())}&operatorId=${encodeURIComponent(op)}&teamlead=${encodeURIComponent(tl)}`);
+    fillRepTable(data.rows||[]);
+  }finally{ document.getElementById('repStatus').textContent=''; }
+};
+function secToHMS(s){ s=Math.max(0,Math.floor(s)); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60; const pad=n=>(n<10?'0':'')+n; return (h?pad(h)+':':'')+pad(m)+':'+pad(ss); }
+function fillRepTable(rows){
+  const tb=document.querySelector('#repTable tbody'); tb.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td style="padding:6px;border-bottom:1px solid var(--border)">${esc(r.name||r.operatorId)}</td>
+      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(r.teamlead||'')}</td>
+      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalLine||0))}</td>
+      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalBreak||0))}</td>
+      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalWait||0))}</td>
+      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalLunch||0))}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ============ Buttons ============
+document.getElementById('btnRefresh').onclick = fullReload;
+document.getElementById('btnReports').onclick = ()=> switchPage(state.page==='reports'?'board':'reports');
+document.getElementById('btnNewDay').onclick = async ()=>{
+  if (!state.session) return;
+  if (!confirm('Начать новый день? Всех переведёт в «Выходной», обнулит итоги и старт смены.')) return;
+  const actor = state.session.displayName || state.session.operatorId;
+  try{ await api('/api/newDay',{method:'POST',body:JSON.stringify({token:state.session.token, actor})}); await fullReload(); }catch(e){ alert('Нет прав'); }
+};
+function switchPage(page){
+  state.page=page; const isRep=page==='reports';
+  document.getElementById('summary').classList.toggle('hidden',isRep);
+  document.getElementById('appBoard').classList.toggle('hidden',isRep);
+  document.getElementById('appFooter').classList.toggle('hidden',isRep);
+  document.getElementById('reports').classList.toggle('hidden',!isRep);
+}
+
+// ============ Bootstrap ============
+(async function bootstrap(){
+  const sess = await restoreSession();
+  if (sess){ applySession(sess); document.getElementById('login').style.display='none'; document.getElementById('topbar').classList.remove('hidden'); await fullReload(); }
+  else { document.getElementById('login').style.display='flex'; }
+})();
+</script>
+</body>
+</html>

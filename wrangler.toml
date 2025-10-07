@@ -1,0 +1,10 @@
+name = "kaiten"
+compatibility_date = "2025-10-01"
+
+[site]
+bucket = "./public"
+
+[[d1_databases]]
+binding = "DB"                # доступ к БД в коде через env.DB
+database_name = "kaiten-db"   # создадим чуть позже
+database_id = "f7e15480-2d44-4d39-af6a-95209477aaf1"              # сейчас оставь пустым — заполним на следующем шаге

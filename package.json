@@ -1,0 +1,11 @@
+{
+  "name": "kaiten",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev .",
+    "deploy": "wrangler pages deploy .",
+    "db:apply": "wrangler d1 execute kaiten-db --file=schema.sql",
+    "db:seed": "wrangler d1 execute kaiten-db --file=seed.sql"
+  }
+}
