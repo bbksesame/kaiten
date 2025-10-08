@@ -13,7 +13,7 @@
     --chip-bg:#222a3b;--chip-border:#51608a;--chip-hover:#2c3650;--card-shadow:0 6px 18px rgba(0,0,0,.25);--card-radius:14px}
   body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
   .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(21,25,34,.95),rgba(21,25,34,.6));backdrop-filter:blur(6px)}
-  header{display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
+  {display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
   button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
   button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
   .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
@@ -50,15 +50,24 @@
 
 <!-- TOP -->
 <div id="topbar" class="topbar hidden">
-  <header>
-    <div>Вы: <span id="who">…</span> <span class="badge" id="roleBadge">Оператор</span></div>
-    <div class="spacer"></div>
-    <select id="shiftFilter"><option value="all">Все смены</option></select>
-    <button id="btnReports" class="btn-chip hidden">Отчёты</button>
-    <button id="btnRefresh" class="btn-chip">Обновить</button>
-    <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
-    <button id="btnLogout" class="btn-chip">Выйти</button>
-  </header>
+  <header id="appHeader">
+  <div class="left">
+    <div class="stack">
+      <div class="row">
+        <div id="userBox">Вы: <span id="who">…</span></div>
+        <span class="badge" id="roleBadge" title="Роль">Оператор</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="spacer"></div>
+
+  <button id="btnReports" class="btn-chip hidden">Отчёты</button>
+  <button id="btnClear" class="btn-chip hidden">Очистить логи</button>
+  <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
+  <button id="btnLogout" class="btn-chip" title="Сменить пользователя">Выйти</button>
+  <button id="btnTheme" class="toggle" title="Сменить тему">Тема</button>
+</header>
   <div id="summary" class="summarybar hidden"></div>
 </div>
 
@@ -102,9 +111,9 @@ const MAX_DATAURL_LEN = 49000;
 
 // ============ API helper ============
 async function api(url, opts={}){
-  const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
+  const r = await fetch(url, Object.assign({s:{'Content-Type':'application/json'}}, opts));
   if (!r.ok) throw new Error(await r.text());
-  return r.headers.get('content-type')?.includes('application/json') ? r.json() : r.text();
+  return r.s.get('content-type')?.includes('application/json') ? r.json() : r.text();
 }
 
 // ============ Session ============
