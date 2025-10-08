@@ -11,13 +11,31 @@
     --danger:#3a1f25;--danger-b:#6c2b37;--card-52:#2a3446;--border-52:#4a6183;--card-22:#342c3a;--border-22:#73507f;
     --pill-shift-bg:#3b3317;--pill-shift-text:#f7e4a2;--pill-time-bg:#442a24;--pill-time-text:#ffd9cd;
     --chip-bg:#222a3b;--chip-border:#51608a;--chip-hover:#2c3650;--card-shadow:0 6px 18px rgba(0,0,0,.25);--card-radius:14px}
+  /* светлая тема */
+  body[data-theme="light"]{
+    --bg:#f4efe6;--panel:#fff8ed;--card:#ffffff;--text:#2a2a2a;--muted:#6f6a63;--accent:#7f6cfd;
+    --ok:#178a57;--border:#e3d6c1;--dash:#e8decc;--timer:#176d45;--btn:#f7f1e6;--btn-border:#e9dfcc;--btn-hover:#efe6d5;
+    --danger:#ffe9ec;--danger-b:#ffb5c1;--card-52:#eef5ff;--border-52:#cfe2ff;--card-22:#f6efff;--border-22:#e1d1ff;
+    --pill-shift-bg:#ffe6b0;--pill-shift-text:#5b4a1b;--pill-time-bg:#ffd8d1;--pill-time-text:#6b3a33;
+    --chip-bg:#fff4df;--chip-border:#e6c68f;--chip-hover:#ffe9c7;--card-shadow:0 6px 16px rgba(0,0,0,.08)
+  }
+
+  *{box-sizing:border-box}
   body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
-  .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(21,25,34,.95),rgba(21,25,34,.6));backdrop-filter:blur(6px)}
-  {display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
+  .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,.06));backdrop-filter:blur(6px)}
+  header{display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
+  .badge{border:1px solid var(--border);padding:2px 6px;border-radius:8px;font-size:12px;margin-left:8px;color:inherit}
   button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
-  button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
-  .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
-  .board{display:flex;gap:16px;padding:10px 16px 16px;overflow-x:auto}
+  button:hover{background:var(--btn-hover)}
+  .btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
+  .toggle{width:54px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:10px}
+
+  .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}
+  .chip{display:inline-flex;gap:8px;align-items:center;padding:6px 12px;border:1px solid var(--chip-border);background:var(--chip-bg);border-radius:999px;cursor:pointer}
+  .chip:hover{background:var(--chip-hover)}
+
+  .board{display:flex;gap:16px;padding:10px 16px 16px;overflow-x:auto;cursor:grab}
+  .board.is-panning{cursor:grabbing}
   .col{min-width:280px;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:10px;display:flex;flex-direction:column}
   .drop{flex:1;min-height:520px;padding:6px;border-radius:12px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:var(--card-radius);padding:10px;margin:8px;cursor:grab;box-shadow:var(--card-shadow)}
@@ -26,11 +44,13 @@
   .img-hero{margin:-10px -10px 8px}.img-hero img{width:100%;display:block;border-radius:var(--card-radius) var(--card-radius) 0 0;border:0}
   .name{font-weight:700;display:flex;align-items:center;gap:10px}.meta{color:var(--muted);font-size:12px;margin-top:4px}
   .timer{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--timer)}
-  .pills{display:flex;align-items:center;gap:8px;margin-top:8px}.pill{display:inline-flex;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px}
+  .pills{display:flex;align-items:center;gap:8px;margin-top:8px}
+  .pill{display:inline-flex;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px}
   .pill.shift{background:var(--pill-shift-bg);color:var(--pill-shift-text)}.pill.time{background:var(--pill-time-bg);color:var(--pill-time-text)}
   .pill-upload{background:var(--btn);border:1px solid var(--btn-border);color:var(--muted);border-radius:999px;padding:4px 8px}
   .sum{margin-top:8px;font-size:12px;color:var(--muted)} .sum td{padding:2px 0}.sum td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-  .footer{padding:8px 16px;color:var(--muted);font-size:12px}.hidden{display:none}
+  .footer{padding:8px 16px;color:var(--muted);font-size:12px}
+  .hidden{display:none}
 </style>
 </head>
 <body data-theme="dark">
@@ -51,23 +71,16 @@
 <!-- TOP -->
 <div id="topbar" class="topbar hidden">
   <header id="appHeader">
-  <div class="left">
-    <div class="stack">
-      <div class="row">
-        <div id="userBox">Вы: <span id="who">…</span></div>
-        <span class="badge" id="roleBadge" title="Роль">Оператор</span>
-      </div>
+    <div class="left">
+      <div id="userBox">Вы: <span id="who">…</span></div>
+      <span class="badge" id="roleBadge" title="Роль">Оператор</span>
     </div>
-  </div>
-
-  <div class="spacer"></div>
-
-  <button id="btnReports" class="btn-chip hidden">Отчёты</button>
-  <button id="btnClear" class="btn-chip hidden">Очистить логи</button>
-  <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
-  <button id="btnLogout" class="btn-chip" title="Сменить пользователя">Выйти</button>
-  <button id="btnTheme" class="toggle" title="Сменить тему">Тема</button>
-</header>
+    <div class="spacer"></div>
+    <button id="btnReports" class="btn-chip hidden">Отчёты</button>
+    <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
+    <button id="btnLogout" class="btn-chip" title="Сменить пользователя">Выйти</button>
+    <button id="btnTheme" class="toggle" title="Сменить тему">Тема</button>
+  </header>
   <div id="summary" class="summarybar hidden"></div>
 </div>
 
@@ -104,19 +117,36 @@
 
 <script>
 const state = {
-  statuses:[], cards:[], session:null, serverOffsetMs:0, page:'board',
-  filterShift: localStorage.getItem('shiftFilter') || 'all', lastColumnsHash:{}
+  statuses: [],
+  cards: [],
+  session: null,
+  serverOffsetMs: 0,
+  page: 'board',
+  lastColumnsHash: {},
+  lastVersion: 0
 };
 const MAX_DATAURL_LEN = 49000;
 
-// ============ API helper ============
+/* ====== ТЕМА (светлая/тёмная) ====== */
+(function initTheme(){
+  const saved = localStorage.getItem('theme') || 'dark';
+  document.body.setAttribute('data-theme', saved);
+})();
+document.getElementById('btnTheme').onclick = ()=>{
+  const cur = document.body.getAttribute('data-theme') || 'dark';
+  const next = cur === 'light' ? 'dark' : 'light';
+  document.body.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+};
+
+/* ====== API helper ====== */
 async function api(url, opts={}){
-  const r = await fetch(url, Object.assign({s:{'Content-Type':'application/json'}}, opts));
+  const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
   if (!r.ok) throw new Error(await r.text());
-  return r.s.get('content-type')?.includes('application/json') ? r.json() : r.text();
+  return r.headers.get('content-type')?.includes('application/json') ? r.json() : r.text();
 }
 
-// ============ Session ============
+/* ====== Session ====== */
 function applySession(sess){
   state.session = sess;
   document.getElementById('who').textContent = sess?.displayName || sess?.operatorId || '—';
@@ -131,7 +161,7 @@ async function restoreSession(){
   try { return await api('/api/session?token='+encodeURIComponent(token)); } catch { return null; }
 }
 
-// ============ Login ============
+/* ====== Login ====== */
 document.getElementById('btnDoLogin').onclick = async ()=>{
   const code = (document.getElementById('codeInput').value||'').trim();
   try{
@@ -140,14 +170,26 @@ document.getElementById('btnDoLogin').onclick = async ()=>{
     applySession(sess);
     document.getElementById('login').style.display='none';
     document.getElementById('topbar').classList.remove('hidden');
-    fullReload();
+    await fullReload();
   }catch(e){ alert('Код неверный'); }
 };
-document.getElementById('btnLogout').onclick = ()=>{
-  localStorage.removeItem('token'); location.reload();
-};
+document.getElementById('btnLogout').onclick = ()=>{ localStorage.removeItem('token'); location.reload(); };
 
-// ============ Load/render ============
+/* ====== Version poll (автообновление) ====== */
+async function pollVersion(){
+  if (!state.session) return;
+  try{
+    const v = await api('/api/version');
+    if (v && typeof v.version === 'number' && state.lastVersion !== v.version){
+      state.lastVersion = v.version;
+      await load();
+    }
+  }catch{}
+}
+setInterval(pollVersion, 2000);
+setInterval(()=>{ if (state.session && !document.hidden) load(); }, 30000); // редкий фолбэк
+
+/* ====== Data ====== */
 async function fullReload(){ await load(); }
 async function load(){
   const data = await api('/api/board');
@@ -155,10 +197,12 @@ async function load(){
   render(data);
 }
 function render(data){
-  state.statuses = data.statuses||[]; state.cards = data.cards||[];
-  updateFilters(state.cards); fillReportSelectors(state.cards);
+  state.statuses = data.statuses||[];
+  state.cards = data.cards||[];
 
-  const filtered = state.cards.filter(c=> matchesShiftFilter(c, state.filterShift));
+  fillReportSelectors(state.cards);
+
+  const filtered = state.cards; // фильтр по сменам убран
   const byStatus = {}; state.statuses.forEach(s=>byStatus[s]=[]);
   filtered.forEach(c => (byStatus[c.status]||(byStatus[c.status]=[])).push(c));
   state.statuses.forEach(s=>{
@@ -240,15 +284,15 @@ function makeCard(c){
      </table></div>
      <div class="startline"><span class="start-text"></span></div>`;
   el.querySelector('.pill-upload').onclick = ()=> triggerAddImage(cardId);
-  el.addEventListener('dragstart', e=>{ if(!el.draggable){e.preventDefault();return;} el.classList.add('dragging'); e.dataTransfer.setData('text/plain', cardId); });
-  el.addEventListener('dragend', ()=> el.classList.remove('dragging'));
+  el.addEventListener('dragstart', e=>{ if(!el.draggable){e.preventDefault();return;} el.classList.add('dragging'); e.dataTransfer.setData('text/plain', cardId); startAutoScroll(); });
+  el.addEventListener('dragend', ()=>{ el.classList.remove('dragging'); stopAutoScroll(); });
   return el;
 }
 function enableDrop(zone){
-  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.style.outline='2px dashed var(--accent)'; });
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.style.outline='2px dashed var(--accent)'; AutoScroll.pointerX=e.clientX; AutoScroll.pointerY=e.clientY; });
   zone.addEventListener('dragleave', ()=> zone.style.outline='none');
   zone.addEventListener('drop', async e=>{
-    e.preventDefault(); zone.style.outline='none';
+    e.preventDefault(); zone.style.outline='none'; stopAutoScroll();
     const id = (e.dataTransfer.getData('text/plain')||'').trim(); if(!id) return;
     const to = zone.dataset.status; await move(id,to);
   });
@@ -263,7 +307,7 @@ async function move(operatorId, newStatus){
   }catch(e){ console.warn('moveCard', e.message); }
 }
 
-// ============ Images ============
+/* ====== Images ====== */
 async function triggerAddImage(operatorId){
   if (!state.session) return;
   const input = document.createElement('input'); input.type='file'; input.accept='image/*'; input.style.display='none';
@@ -300,7 +344,7 @@ function readAndResizeImage(file, maxW){
   });
 }
 
-// ============ Timers / sums ============
+/* ====== Таймеры / суммы ====== */
 function tickTimers(){
   const nowMs = Date.now() + (state.serverOffsetMs||0);
   document.querySelectorAll('.card').forEach(el=>{
@@ -344,27 +388,7 @@ function renderStartLine(el){
   span.textContent = same ? ('Начал смену в '+hhmm) : ('Начал смену '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+' в '+hhmm);
 }
 
-// ============ Filters & Reports ============
-function updateFilters(cards){
-  const select = document.getElementById('shiftFilter'); const set = new Set();
-  (cards||[]).forEach(c=>{ const v=(c.workHours||'').trim(); if(v) set.add(v); });
-  const items = Array.from(set).sort((a,b)=>a.localeCompare(b,'ru'));
-  select.innerHTML = '<option value="all">Все смены</option>' + items.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
-  select.value = (items.includes(state.filterShift) ? state.filterShift : 'all');
-}
-document.getElementById('shiftFilter').onchange = (e)=>{ state.filterShift=e.target.value; localStorage.setItem('shiftFilter', state.filterShift); render({statuses:state.statuses,cards:state.cards,serverNowIso:new Date().toISOString()}); };
-function matchesShiftFilter(card, filter){ if(filter==='all') return true; const s=String(card.workHours||'').trim(); if(!s) return false; return s===filter; }
-
-function fillReportSelectors(cards){
-  const opSel=document.getElementById('repOperator'), tlSel=document.getElementById('repTeamlead');
-  const ops = Array.from(new Set(cards.map(c=>JSON.stringify({id:c.id,name:c.name})))) .map(s=>JSON.parse(s)) .sort((a,b)=>a.name.localeCompare(b.name,'ru'));
-  const tls = Array.from(new Set(cards.map(c=>c.teamlead).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'ru'));
-  opSel.innerHTML='<option value=\"\">Все</option>'+ops.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
-  tlSel.innerHTML='<option value=\"\">Все</option>'+tls.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
-  const today = new Date(); const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-  if(!document.getElementById('repFrom').value) document.getElementById('repFrom').value = iso(today);
-  if(!document.getElementById('repTo').value)   document.getElementById('repTo').value   = iso(today);
-}
+/* ====== ОТЧЁТЫ (как было) ====== */
 document.getElementById('btnBuildRep').onclick = async ()=>{
   const from = document.getElementById('repFrom').value, to=document.getElementById('repTo').value;
   const op=document.getElementById('repOperator').value, tl=document.getElementById('repTeamlead').value;
@@ -375,6 +399,16 @@ document.getElementById('btnBuildRep').onclick = async ()=>{
   }finally{ document.getElementById('repStatus').textContent=''; }
 };
 function secToHMS(s){ s=Math.max(0,Math.floor(s)); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60; const pad=n=>(n<10?'0':'')+n; return (h?pad(h)+':':'')+pad(m)+':'+pad(ss); }
+function fillRepSelectors(cards){
+  const opSel=document.getElementById('repOperator'), tlSel=document.getElementById('repTeamlead');
+  const ops = Array.from(new Set(cards.map(c=>JSON.stringify({id:c.id,name:c.name})))) .map(s=>JSON.parse(s)) .sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  const tls = Array.from(new Set(cards.map(c=>c.teamlead).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'ru'));
+  opSel.innerHTML='<option value=\"\">Все</option>'+ops.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+  tlSel.innerHTML='<option value=\"\">Все</option>'+tls.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  const today = new Date(); const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  if(!document.getElementById('repFrom').value) document.getElementById('repFrom').value = iso(today);
+  if(!document.getElementById('repTo').value)   document.getElementById('repTo').value   = iso(today);
+}
 function fillRepTable(rows){
   const tb=document.querySelector('#repTable tbody'); tb.innerHTML='';
   rows.forEach(r=>{
@@ -389,8 +423,7 @@ function fillRepTable(rows){
   });
 }
 
-// ============ Buttons ============
-document.getElementById('btnRefresh').onclick = fullReload;
+/* ====== Переключение страниц ====== */
 document.getElementById('btnReports').onclick = ()=> switchPage(state.page==='reports'?'board':'reports');
 document.getElementById('btnNewDay').onclick = async ()=>{
   if (!state.session) return;
@@ -406,7 +439,85 @@ function switchPage(page){
   document.getElementById('reports').classList.toggle('hidden',!isRep);
 }
 
-// ============ Bootstrap ============
+/* ====== АВТОСКРОЛЛ ПРИ ПЕРЕТАСКИВАНИИ (ускорено) ====== */
+const AutoScroll = { active:false, rafId:0, pointerX:0, pointerY:0, edge:200, maxStep:70 };
+function startAutoScroll(){
+  if (AutoScroll.active) return;
+  AutoScroll.active = true;
+  const loop = () => {
+    if (!AutoScroll.active) return;
+    try {
+      const board = document.getElementById('appBoard');
+      if (board) {
+        const rect = board.getBoundingClientRect();
+        const dxLeft  = AutoScroll.pointerX - rect.left;
+        const dxRight = rect.right - AutoScroll.pointerX;
+        if (dxLeft < AutoScroll.edge) {
+          const k = 1 - Math.max(0, dxLeft) / AutoScroll.edge;
+          board.scrollLeft -= Math.ceil(k * AutoScroll.maxStep);
+        } else if (dxRight < AutoScroll.edge) {
+          const k = 1 - Math.max(0, dxRight) / AutoScroll.edge;
+          board.scrollLeft += Math.ceil(k * AutoScroll.maxStep);
+        }
+      }
+      const vpH = window.innerHeight || document.documentElement.clientHeight;
+      const dyTop = AutoScroll.pointerY;
+      const dyBot = vpH - AutoScroll.pointerY;
+      if (dyTop < AutoScroll.edge) {
+        const k = 1 - Math.max(0, dyTop) / AutoScroll.edge;
+        window.scrollBy(0, -Math.ceil(k * AutoScroll.maxStep));
+      } else if (dyBot < AutoScroll.edge) {
+        const k = 1 - Math.max(0, dyBot) / AutoScroll.edge;
+        window.scrollBy(0,  Math.ceil(k * AutoScroll.maxStep));
+      }
+    } catch(_) {}
+    AutoScroll.rafId = requestAnimationFrame(loop);
+  };
+  AutoScroll.rafId = requestAnimationFrame(loop);
+  document.addEventListener('dragover', onDragOverPointer, { passive:false });
+}
+function onDragOverPointer(e){ AutoScroll.pointerX = e.clientX; AutoScroll.pointerY = e.clientY; }
+function stopAutoScroll(){
+  AutoScroll.active = false;
+  if (AutoScroll.rafId) cancelAnimationFrame(AutoScroll.rafId);
+  document.removeEventListener('dragover', onDragOverPointer);
+}
+
+/* ====== ПАНОРАМИРОВАНИЕ ДОСКИ ЛКМ (перетаскиваем фон) ====== */
+(function enableBoardPanning(){
+  const board = document.getElementById('appBoard');
+  let pan = { active:false, startX:0, startY:0, scrollLeft:0, lastWinY:0 };
+
+  function isInteractive(el){ return el.closest('button,select,input,textarea,label,.card'); }
+
+  board.addEventListener('mousedown', (e)=>{
+    if (e.button !== 0) return;
+    if (isInteractive(e.target)) return;
+    pan.active = true;
+    board.classList.add('is-panning');
+    pan.startX = e.clientX; pan.startY = e.clientY;
+    pan.scrollLeft = board.scrollLeft;
+    pan.lastWinY = window.scrollY || document.documentElement.scrollTop || 0;
+    e.preventDefault();
+  });
+
+  window.addEventListener('mousemove', (e)=>{
+    if (!pan.active) return;
+    const dx = e.clientX - pan.startX;
+    const dy = e.clientY - pan.startY;
+    board.scrollLeft = pan.scrollLeft - dx;
+    const targetWinY = pan.lastWinY - dy;
+    window.scrollTo({ top: targetWinY, left: window.scrollX, behavior: 'auto' });
+  }, { passive:false });
+
+  window.addEventListener('mouseup', ()=>{
+    if (!pan.active) return;
+    pan.active = false;
+    board.classList.remove('is-panning');
+  });
+})();
+
+/* ====== Bootstrap ====== */
 (async function bootstrap(){
   const sess = await restoreSession();
   if (sess){ applySession(sess); document.getElementById('login').style.display='none'; document.getElementById('topbar').classList.remove('hidden'); await fullReload(); }
@@ -415,3 +526,4 @@ function switchPage(page){
 </script>
 </body>
 </html>
+
