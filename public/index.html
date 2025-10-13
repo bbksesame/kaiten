@@ -235,11 +235,11 @@ function makeCard(c){
     if(!el.draggable){e.preventDefault();return;}
     el.classList.add('dragging');
     e.dataTransfer.setData('text/plain', cardId);
-    __asStart();                     // автоскролл: старт
+    __asStart();
   });
   el.addEventListener('dragend', ()=>{
     el.classList.remove('dragging');
-    __asStop();                      // автоскролл: стоп
+    __asStop();
   });
   return el;
 }
@@ -247,7 +247,7 @@ function enableDrop(zone){
   zone.addEventListener('dragover', e=>{
     e.preventDefault();
     zone.style.outline='2px dashed var(--accent)';
-    __asUpdateMouse(e);              // автоскролл: обновляем координаты мыши
+    __asUpdateMouse(e);
   });
   zone.addEventListener('dragleave', ()=> zone.style.outline='none');
   zone.addEventListener('drop', async e=>{
@@ -349,8 +349,8 @@ function renderStartLine(el){
 
 /* ============ AutoScroll while dragging ============ */
 let __asRAF = 0, __asActive = false, __mx = 0, __my = 0;
-const __EDGE = 80;       // ширина активной зоны у краёв окна (px)
-const __MAXSPEED = 32;   // скорость прокрутки (px/кадр) — довольно быстро
+const __EDGE = 80;
+const __MAXSPEED = 32;
 
 function __asUpdateMouse(e){
   __mx = e.clientX; __my = e.clientY;
@@ -369,11 +369,8 @@ function __asStart(){
     if (__my < __EDGE)                dy = -((__EDGE - __my)/__EDGE) * __MAXSPEED;
     else if (vh - __my < __EDGE)      dy =  ((__EDGE - (vh - __my))/__EDGE) * __MAXSPEED;
 
-    // Горизонтально крутим контейнер доски
     const board = document.querySelector('.board');
     if (board && dx) board.scrollLeft += dx;
-
-    // Вертикально крутим страницу
     if (dy) window.scrollBy(0, dy);
   };
   loop();
@@ -383,7 +380,6 @@ function __asStop(){
   if (__asRAF) cancelAnimationFrame(__asRAF);
   __asRAF = 0;
 }
-// глобальные слушатели для d&d
 document.addEventListener('dragover', (e)=>{ __asUpdateMouse(e); });
 document.addEventListener('drop', ()=> __asStop());
 document.addEventListener('dragleave', (e)=>{
@@ -414,11 +410,23 @@ function fillReportSelectors(cards){
 document.getElementById('btnBuildRep').onclick = async ()=>{
   const from = document.getElementById('repFrom').value, to=document.getElementById('repTo').value;
   const op=document.getElementById('repOperator').value, tl=document.getElementById('repTeamlead').value;
-  document.getElementById('repStatus').textContent='Считаю...';
+  const q = new URLSearchParams({
+    fromIso: new Date(from).toISOString(),
+    toIso:   new Date(new Date(to).getTime()+24*3600*1000-1).toISOString(),
+    operatorId: op||'',
+    teamlead: tl||'',
+    token: state.session?.token || ''
+  });
+  const statusEl = document.getElementById('repStatus');
+  statusEl.textContent='Считаю...';
   try{
-    const data = await api(`/api/report?fromIso=${encodeURIComponent(new Date(from).toISOString())}&toIso=${encodeURIComponent(new Date(new Date(to).getTime()+24*3600*1000-1).toISOString())}&operatorId=${encodeURIComponent(op)}&teamlead=${encodeURIComponent(tl)}`);
-    fillRepTable(data.rows||[]);
-  }finally{ document.getElementById('repStatus').textContent=''; }
+    const data = await api(`/api/report?${q.toString()}`);
+    const rows = data?.rows || [];
+    fillRepTable(rows);
+    statusEl.textContent = rows.length ? `Строк: ${rows.length}` : 'Нет данных за период';
+  }catch(e){
+    statusEl.textContent = 'Ошибка: ' + (e?.message || 'неизвестная');
+  }
 };
 function secToHMS(s){ s=Math.max(0,Math.floor(s)); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60; const pad=n=>(n<10?'0':'')+n; return (h?pad(h)+':':'')+pad(m)+':'+pad(ss); }
 function fillRepTable(rows){
@@ -450,8 +458,6 @@ function switchPage(page){
   document.getElementById('appBoard').classList.toggle('hidden',isRep);
   document.getElementById('appFooter').classList.toggle('hidden',isRep);
   document.getElementById('reports').classList.toggle('hidden',!isRep);
-
-  // >>> добавлено: управление автообновлением по текущей странице
   if (isRep) stopPolling(); else ensureBoardPolling();
 }
 
@@ -463,7 +469,7 @@ function switchPage(page){
     document.getElementById('login').style.display='none';
     document.getElementById('topbar').classList.remove('hidden');
     await fullReload();
-    ensureBoardPolling(); // >>> добавлено: включаем опрос только на доске
+    ensureBoardPolling();
   } else {
     document.getElementById('login').style.display='flex';
   }
@@ -479,7 +485,30 @@ function stopPolling(){
   if (__pollId){ clearInterval(__pollId); __pollId = 0; }
 }
 
-// таймер для визуальных таймеров карточек остаётся всегда
+/* ======== Автоскролл при перетягивании ======== */
+let __asRAF = 0, __asActive = false, __mx = 0, __my = 0;
+const __EDGE = 80, __MAXSPEED = 32;
+function __asUpdateMouse(e){ __mx = e.clientX; __my = e.clientY; if (!__asActive) __asStart(); }
+function __asStart(){
+  __asActive = true;
+  const loop = ()=>{
+    __asRAF = requestAnimationFrame(loop);
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let dx = 0, dy = 0;
+    if (__mx < __EDGE) dx = -((__EDGE - __mx)/__EDGE) * __MAXSPEED;
+    else if (vw - __mx < __EDGE) dx = ((__EDGE - (vw - __mx))/__EDGE) * __MAXSPEED;
+    if (__my < __EDGE) dy = -((__EDGE - __my)/__EDGE) * __MAXSPEED;
+    else if (vh - __my < __EDGE) dy = ((__EDGE - (vh - __my))/__EDGE) * __MAXSPEED;
+    const board = document.querySelector('.board'); if (board && dx) board.scrollLeft += dx;
+    if (dy) window.scrollBy(0, dy);
+  };
+  loop();
+}
+function __asStop(){ __asActive = false; if (__asRAF) cancelAnimationFrame(__asRAF); __asRAF = 0; }
+document.addEventListener('dragover', (e)=>{ __asUpdateMouse(e); });
+document.addEventListener('drop', ()=> __asStop());
+document.addEventListener('dragleave', (e)=>{ if (e.clientX<=0 || e.clientY<=0 || e.clientX>=window.innerWidth || e.clientY>=window.innerHeight) __asStop(); });
+
 </script>
 </body>
 </html>
