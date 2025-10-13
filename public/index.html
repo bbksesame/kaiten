@@ -235,11 +235,11 @@ function makeCard(c){
     if(!el.draggable){e.preventDefault();return;}
     el.classList.add('dragging');
     e.dataTransfer.setData('text/plain', cardId);
-    __asStart();
+    __asStart();     // автоскролл: старт
   });
   el.addEventListener('dragend', ()=>{
     el.classList.remove('dragging');
-    __asStop();
+    __asStop();      // автоскролл: стоп
   });
   return el;
 }
@@ -247,7 +247,7 @@ function enableDrop(zone){
   zone.addEventListener('dragover', e=>{
     e.preventDefault();
     zone.style.outline='2px dashed var(--accent)';
-    __asUpdateMouse(e);
+    __asUpdateMouse(e);   // автоскролл: координаты мыши
   });
   zone.addEventListener('dragleave', ()=> zone.style.outline='none');
   zone.addEventListener('drop', async e=>{
@@ -349,8 +349,8 @@ function renderStartLine(el){
 
 /* ============ AutoScroll while dragging ============ */
 let __asRAF = 0, __asActive = false, __mx = 0, __my = 0;
-const __EDGE = 80;
-const __MAXSPEED = 32;
+const __EDGE = 80;       // ширина активной зоны у краёв окна (px)
+const __MAXSPEED = 32;   // скорость прокрутки (px/кадр)
 
 function __asUpdateMouse(e){
   __mx = e.clientX; __my = e.clientY;
@@ -391,7 +391,7 @@ function updateFilters(cards){
   const select = document.getElementById('shiftFilter'); const set = new Set();
   (cards||[]).forEach(c=>{ const v=(c.workHours||'').trim(); if(v) set.add(v); });
   const items = Array.from(set).sort((a,b)=>a.localeCompare(b,'ru'));
-  select.innerHTML = '<option value="all">Все смены</option>' + items.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  select.innerHTML = '<option value="all">Все</option>' + items.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
   select.value = (items.includes(state.filterShift) ? state.filterShift : 'all');
 }
 document.getElementById('shiftFilter').onchange = (e)=>{ state.filterShift=e.target.value; localStorage.setItem('shiftFilter', state.filterShift); render({statuses:state.statuses,cards:state.cards,serverNowIso:new Date().toISOString()}); };
@@ -484,31 +484,6 @@ function ensureBoardPolling(){
 function stopPolling(){
   if (__pollId){ clearInterval(__pollId); __pollId = 0; }
 }
-
-/* ======== Автоскролл при перетягивании ======== */
-let __asRAF = 0, __asActive = false, __mx = 0, __my = 0;
-const __EDGE = 80, __MAXSPEED = 32;
-function __asUpdateMouse(e){ __mx = e.clientX; __my = e.clientY; if (!__asActive) __asStart(); }
-function __asStart(){
-  __asActive = true;
-  const loop = ()=>{
-    __asRAF = requestAnimationFrame(loop);
-    const vw = window.innerWidth, vh = window.innerHeight;
-    let dx = 0, dy = 0;
-    if (__mx < __EDGE) dx = -((__EDGE - __mx)/__EDGE) * __MAXSPEED;
-    else if (vw - __mx < __EDGE) dx = ((__EDGE - (vw - __mx))/__EDGE) * __MAXSPEED;
-    if (__my < __EDGE) dy = -((__EDGE - __my)/__EDGE) * __MAXSPEED;
-    else if (vh - __my < __EDGE) dy = ((__EDGE - (vh - __my))/__EDGE) * __MAXSPEED;
-    const board = document.querySelector('.board'); if (board && dx) board.scrollLeft += dx;
-    if (dy) window.scrollBy(0, dy);
-  };
-  loop();
-}
-function __asStop(){ __asActive = false; if (__asRAF) cancelAnimationFrame(__asRAF); __asRAF = 0; }
-document.addEventListener('dragover', (e)=>{ __asUpdateMouse(e); });
-document.addEventListener('drop', ()=> __asStop());
-document.addEventListener('dragleave', (e)=>{ if (e.clientX<=0 || e.clientY<=0 || e.clientX>=window.innerWidth || e.clientY>=window.innerHeight) __asStop(); });
-
 </script>
 </body>
 </html>
