@@ -403,6 +403,7 @@ function switchPage(page){
   if (sess){ applySession(sess); document.getElementById('login').style.display='none'; document.getElementById('topbar').classList.remove('hidden'); await fullReload(); }
   else { document.getElementById('login').style.display='flex'; }
 })();
+  setInterval(updateBoard, 3000);
 </script>
 </body>
 </html>
