@@ -450,17 +450,36 @@ function switchPage(page){
   document.getElementById('appBoard').classList.toggle('hidden',isRep);
   document.getElementById('appFooter').classList.toggle('hidden',isRep);
   document.getElementById('reports').classList.toggle('hidden',!isRep);
+
+  // >>> добавлено: управление автообновлением по текущей странице
+  if (isRep) stopPolling(); else ensureBoardPolling();
 }
 
 // ============ Bootstrap ============
 (async function bootstrap(){
   const sess = await restoreSession();
-  if (sess){ applySession(sess); document.getElementById('login').style.display='none'; document.getElementById('topbar').classList.remove('hidden'); await fullReload(); }
-  else { document.getElementById('login').style.display='flex'; }
+  if (sess){
+    applySession(sess);
+    document.getElementById('login').style.display='none';
+    document.getElementById('topbar').classList.remove('hidden');
+    await fullReload();
+    ensureBoardPolling(); // >>> добавлено: включаем опрос только на доске
+  } else {
+    document.getElementById('login').style.display='flex';
+  }
 })();
 
-// Автообновление данных каждые 3 секунды
-setInterval(fullReload, 3000);
+/* ======== Автообновление только на доске ======== */
+let __pollId = 0;
+function ensureBoardPolling(){
+  if (state.page !== 'board') return;
+  if (!__pollId) __pollId = setInterval(fullReload, 3000);
+}
+function stopPolling(){
+  if (__pollId){ clearInterval(__pollId); __pollId = 0; }
+}
+
+// таймер для визуальных таймеров карточек остаётся всегда
 </script>
 </body>
 </html>
