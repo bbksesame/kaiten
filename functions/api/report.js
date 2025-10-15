@@ -17,7 +17,6 @@ function toYYYYMMDD(d) {
     return `${y}-${m}-${dd}`;
   }
   if (typeof d === 'string') {
-    // уже YYYY-MM-DD?
     if (/^\d{4}-\d{2}-\d{2}$/.test(d.trim())) return d.trim();
     const dt = new Date(d);
     if (!Number.isNaN(dt.getTime())) return toYYYYMMDD(dt);
@@ -61,7 +60,6 @@ export async function onRequestGet(context) {
       });
     }
 
-    // безопасность: убедимся, что from <= to
     if (from > to) {
       return badRequest('`from` must be earlier or equal to `to`.', { from, to });
     }
@@ -71,10 +69,7 @@ export async function onRequestGet(context) {
       return serverError('D1 database binding not found. Please bind env.DB to your D1 instance.');
     }
 
-    // Строим SQL динамически (только нужные фильтры)
-    // Предполагаем таблицу dailyReports с колонками:
-    // date TEXT(YYYY-MM-DD), operatorId TEXT, name TEXT, teamlead TEXT,
-    // totalLine INTEGER, totalBreak INTEGER, totalWait INTEGER, totalLunch INTEGER
+    // where + binds
     const where = ['date BETWEEN ? AND ?'];
     const binds = [from, to];
 
@@ -87,7 +82,7 @@ export async function onRequestGet(context) {
       binds.push(teamlead);
     }
 
-    // Группируем по оператору (id, name, teamlead), суммируем поля
+    // Группируем по оператору и фильтруем нулевые строки через HAVING
     const sql = `
       SELECT
         operatorId,
@@ -100,6 +95,11 @@ export async function onRequestGet(context) {
       FROM dailyReports
       WHERE ${where.join(' AND ')}
       GROUP BY operatorId, name, teamlead
+      HAVING
+        (SUM(COALESCE(totalLine,0))
+        + SUM(COALESCE(totalBreak,0))
+        + SUM(COALESCE(totalWait,0))
+        + SUM(COALESCE(totalLunch,0))) > 0
       ORDER BY name COLLATE NOCASE ASC
     `;
 
@@ -111,7 +111,6 @@ export async function onRequestGet(context) {
       headers: JSON_HEADERS,
     });
   } catch (err) {
-    // Никогда не отдаём HTML-страницу CF — только JSON
     const message = (err && err.message) ? String(err.message) : 'Unhandled error';
     return serverError('Report worker failed', { message });
   }
