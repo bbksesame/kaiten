@@ -100,7 +100,7 @@ const state = {
 };
 const MAX_DATAURL_LEN = 49000;
 
-// ============ API helper ============
+// ============ API helper (общий) ============
 async function api(url, opts={}){
   const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
   if (!r.ok) throw new Error(await r.text());
@@ -138,13 +138,31 @@ document.getElementById('btnLogout').onclick = ()=>{
   localStorage.removeItem('token'); location.reload();
 };
 
-// ============ Load/render ============
+// ============ Load/render (с отменой старых запросов) ============
+let __loadCtrl = null;
 async function fullReload(){ await load(); }
+
 async function load(){
-  const data = await api('/api/board');
+  // Отменяем предыдущий незавершённый fetch /api/board
+  if (__loadCtrl) { try{ __loadCtrl.abort(); }catch{} }
+  __loadCtrl = new AbortController();
+  let data = null;
+  try{
+    const r = await fetch('/api/board', { headers:{'Content-Type':'application/json'}, signal: __loadCtrl.signal });
+    if (!r.ok) throw new Error(await r.text());
+    data = await r.json();
+  }catch(e){
+    if (e.name === 'AbortError') return; // тихо выходим, был запущен новый load()
+    console.warn('load() failed:', e.message||e);
+    return;
+  }finally{
+    __loadCtrl = null;
+  }
+  if (!data) return;
   if (data?.serverNowIso) state.serverOffsetMs = new Date(data.serverNowIso).getTime() - Date.now();
   render(data);
 }
+
 function render(data){
   state.statuses = data.statuses||[]; state.cards = data.cards||[];
   updateFilters(state.cards); fillReportSelectors(state.cards);
@@ -166,6 +184,7 @@ function render(data){
   document.getElementById('appBoard').classList.remove('hidden');
   document.getElementById('appFooter').classList.remove('hidden');
 }
+
 function renderSummary(byStatus){
   const summary = document.getElementById('summary'); summary.innerHTML='';
   state.statuses.forEach(s=>{
@@ -198,7 +217,9 @@ function renderColumns(byStatus){
     if (state.lastColumnsHash[s] === newHash) return;
     state.lastColumnsHash[s] = newHash;
     const drop = col.querySelector('.drop'); drop.innerHTML='';
-    cards.forEach(c => drop.appendChild(makeCard(c)));
+    const frag = document.createDocumentFragment();
+    cards.forEach(c => frag.appendChild(makeCard(c)));
+    drop.appendChild(frag);
   });
 }
 function detectShiftClass(shift){ const s=String(shift||'').toLowerCase(); if(s==='5/2')return'shift-52'; if(s==='2/2')return'shift-22'; return''; }
@@ -262,6 +283,7 @@ async function move(operatorId, newStatus){
   if (newStatus==='Выходной' && !confirm('Перевести в «Выходной»? Будут сброшены итоги и старт смены.')) return;
   try{
     await api('/api/move',{method:'POST',body:JSON.stringify({operatorId:id,newStatus,token:state.session.token,note:''})});
+    // небольшой debounce не нужен — load() уже отменяет прошлые запросы
     await load();
   }catch(e){ console.warn('moveCard', e.message); }
 }
@@ -303,10 +325,14 @@ function readAndResizeImage(file, maxW){
   });
 }
 
-// ============ Timers / sums ============
+// ============ Timers / sums (оптимизация) ============
 function tickTimers(){
+  // Не тратим ресурсы, если вкладка скрыта или не доска
+  if (document.hidden || state.page !== 'board') return;
+  const list = document.querySelectorAll('.card'); if (!list.length) return;
+
   const nowMs = Date.now() + (state.serverOffsetMs||0);
-  document.querySelectorAll('.card').forEach(el=>{
+  list.forEach(el=>{
     const since = el.dataset.since; const st = el.dataset.status;
     let runningSec = 0; if (since && st!=='Выходной') runningSec = Math.max(0, Math.floor((nowMs - new Date(since).getTime())/1000));
     const timerSpan = el.querySelector('.timer'); const txt = runningSec ? formatDuration(runningSec) : ''; if (timerSpan && timerSpan.textContent!==txt) timerSpan.textContent = txt;
@@ -329,6 +355,7 @@ function tickTimers(){
   });
 }
 setInterval(tickTimers, 1000);
+
 function renderSums(el,b){
   const s1=formatDuration(b.line), s2=formatDuration(b.brk), s3=formatDuration(b.wait), s4=formatDuration(b.lunch);
   const a=el.querySelector('.sum-line'); if(a&&a.textContent!==s1)a.textContent=s1;
@@ -391,7 +418,7 @@ function updateFilters(cards){
   const select = document.getElementById('shiftFilter'); const set = new Set();
   (cards||[]).forEach(c=>{ const v=(c.workHours||'').trim(); if(v) set.add(v); });
   const items = Array.from(set).sort((a,b)=>a.localeCompare(b,'ru'));
-  select.innerHTML = '<option value="all">Все смены</option>' + items.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  select.innerHTML = '<option value="all">Все</option>' + items.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
   select.value = (items.includes(state.filterShift) ? state.filterShift : 'all');
 }
 document.getElementById('shiftFilter').onchange = (e)=>{ state.filterShift=e.target.value; localStorage.setItem('shiftFilter', state.filterShift); render({statuses:state.statuses,cards:state.cards,serverNowIso:new Date().toISOString()}); };
@@ -407,18 +434,14 @@ function fillReportSelectors(cards){
   if(!document.getElementById('repFrom').value) document.getElementById('repFrom').value = iso(today);
   if(!document.getElementById('repTo').value)   document.getElementById('repTo').value   = iso(today);
 }
+
 document.getElementById('btnBuildRep').onclick = async ()=>{
   const from = document.getElementById('repFrom').value;   // YYYY-MM-DD
   const to   = document.getElementById('repTo').value;     // YYYY-MM-DD
   const op   = document.getElementById('repOperator').value || '';
   const tl   = document.getElementById('repTeamlead').value || '';
 
-  const q = new URLSearchParams({
-    from,
-    to,
-    operatorId: op,
-    teamlead: tl
-  });
+  const q = new URLSearchParams({ from, to, operatorId: op, teamlead: tl });
 
   const statusEl = document.getElementById('repStatus');
   statusEl.textContent='Считаю...';
@@ -447,7 +470,7 @@ function fillRepTable(rows){
   });
 }
 
-// ============ Buttons ============
+// ============ Buttons & Page switch ============
 document.getElementById('btnRefresh').onclick = fullReload;
 document.getElementById('btnReports').onclick = ()=> switchPage(state.page==='reports'?'board':'reports');
 document.getElementById('btnNewDay').onclick = async ()=>{
@@ -462,8 +485,17 @@ function switchPage(page){
   document.getElementById('appBoard').classList.toggle('hidden',isRep);
   document.getElementById('appFooter').classList.toggle('hidden',isRep);
   document.getElementById('reports').classList.toggle('hidden',!isRep);
-  if (isRep) stopPolling(); else ensureBoardPolling();
+  if (isRep) stopPolling(); else { fullReload(); ensureBoardPolling(); }
 }
+
+// ============ Visibility pause (новое) ============
+document.addEventListener('visibilitychange', ()=>{
+  if (document.hidden) {
+    stopPolling();
+  } else {
+    if (state.page === 'board') { fullReload(); ensureBoardPolling(); }
+  }
+});
 
 // ============ Bootstrap ============
 (async function bootstrap(){
@@ -491,4 +523,3 @@ function stopPolling(){
 </script>
 </body>
 </html>
-
