@@ -11,8 +11,16 @@
     --danger:#3a1f25;--danger-b:#6c2b37;--card-52:#2a3446;--border-52:#4a6183;--card-22:#342c3a;--border-22:#73507f;
     --pill-shift-bg:#3b3317;--pill-shift-text:#f7e4a2;--pill-time-bg:#442a24;--pill-time-text:#ffd9cd;
     --chip-bg:#222a3b;--chip-border:#51608a;--chip-hover:#2c3650;--card-shadow:0 6px 18px rgba(0,0,0,.25);--card-radius:14px}
+  /* Светлая тема */
+  [data-theme="light"]{
+    --bg:#f5f7fb;--panel:#ffffff;--card:#ffffff;--text:#0f1625;--muted:#5b6678;--accent:#2b5cff;
+    --ok:#2aa36b;--border:#dfe5f2;--dash:#e6ebf5;--timer:#146c2e;--btn:#eef2fb;--btn-border:#d6def0;--btn-hover:#e6ecfa;
+    --danger:#fdecef;--danger-b:#f5b3c1;--card-52:#f3f7ff;--border-52:#c5d6ff;--card-22:#fbf1ff;--border-22:#e6c8f0;
+    --pill-shift-bg:#fff6cf;--pill-shift-text:#7a6518;--pill-time-bg:#ffe7e1;--pill-time-text:#7a3a2d;
+    --chip-bg:#f1f5ff;--chip-border:#c7d4ff;--chip-hover:#e7eeff;--card-shadow:0 4px 14px rgba(0,0,0,.06)}
   body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
   .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(21,25,34,.95),rgba(21,25,34,.6));backdrop-filter:blur(6px)}
+  [data-theme="light"] .topbar{background:linear-gradient(180deg,rgba(245,247,251,.9),rgba(245,247,251,.6))}
   header{display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
   button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
   button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
@@ -53,9 +61,10 @@
   <header>
     <div>Вы: <span id="who">…</span> <span class="badge" id="roleBadge">Оператор</span></div>
     <div class="spacer"></div>
-    <select id="shiftFilter"><option value="all">Все смены</option></select>
+    <!-- убрали select shiftFilter -->
+    <button id="btnTheme" class="btn-chip" title="Переключить тему">Тема: тёмная</button>
+    <!-- убрали btnRefresh -->
     <button id="btnReports" class="btn-chip hidden">Отчёты</button>
-    <button id="btnRefresh" class="btn-chip">Обновить</button>
     <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
     <button id="btnLogout" class="btn-chip">Выйти</button>
   </header>
@@ -96,11 +105,23 @@
 <script>
 const state = {
   statuses:[], cards:[], session:null, serverOffsetMs:0, page:'board',
-  filterShift: localStorage.getItem('shiftFilter') || 'all', lastColumnsHash:{}
+  lastColumnsHash:{}
 };
 const MAX_DATAURL_LEN = 49000;
 
-// ============ API helper (общий) ============
+// ===== THEME =====
+function applyTheme(theme){
+  document.body.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  const btn = document.getElementById('btnTheme');
+  if (btn) btn.textContent = 'Тема: ' + (theme==='light' ? 'светлая' : 'тёмная');
+}
+document.getElementById('btnTheme').onclick = ()=>{
+  const next = (document.body.getAttribute('data-theme')==='light') ? 'dark' : 'light';
+  applyTheme(next);
+};
+
+// ============ API helper ============
 async function api(url, opts={}){
   const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
   if (!r.ok) throw new Error(await r.text());
@@ -143,7 +164,6 @@ let __loadCtrl = null;
 async function fullReload(){ await load(); }
 
 async function load(){
-  // Отменяем предыдущий незавершённый fetch /api/board
   if (__loadCtrl) { try{ __loadCtrl.abort(); }catch{} }
   __loadCtrl = new AbortController();
   let data = null;
@@ -152,7 +172,7 @@ async function load(){
     if (!r.ok) throw new Error(await r.text());
     data = await r.json();
   }catch(e){
-    if (e.name === 'AbortError') return; // тихо выходим, был запущен новый load()
+    if (e.name === 'AbortError') return;
     console.warn('load() failed:', e.message||e);
     return;
   }finally{
@@ -165,13 +185,11 @@ async function load(){
 
 function render(data){
   state.statuses = data.statuses||[]; state.cards = data.cards||[];
-  updateFilters(state.cards); fillReportSelectors(state.cards);
 
-  const filtered = state.cards.filter(c=> matchesShiftFilter(c, state.filterShift));
   const byStatus = {}; state.statuses.forEach(s=>byStatus[s]=[]);
-  filtered.forEach(c => (byStatus[c.status]||(byStatus[c.status]=[])).push(c));
+  (state.cards||[]).forEach(c => (byStatus[c.status]||(byStatus[c.status]=[])).push(c));
   state.statuses.forEach(s=>{
-    byStatus[s].sort((a,b)=>{
+    (byStatus[s]||[]).sort((a,b)=>{
       const ta = a.statusSince ? new Date(a.statusSince).getTime() : 0;
       const tb = b.statusSince ? new Date(b.statusSince).getTime() : 0;
       return (s==='Хочу в перерыв') ? (ta - tb) : (tb - ta);
@@ -184,7 +202,6 @@ function render(data){
   document.getElementById('appBoard').classList.remove('hidden');
   document.getElementById('appFooter').classList.remove('hidden');
 }
-
 function renderSummary(byStatus){
   const summary = document.getElementById('summary'); summary.innerHTML='';
   state.statuses.forEach(s=>{
@@ -238,7 +255,7 @@ function makeCard(c){
   el.innerHTML =
     (avatar?`<div class="img-hero"><img src="${avatar}"></div>`:'')+
     `<div class="name"><div>${esc(c.name)}</div><span class="timer"></span></div>`+
-    `<div class="meta">Тимлид: ${esc(c.teamlead||'—')}${c.role==='admin'?' · <span class="tag">Админ</span>':''}</div>`+
+    `<div class="meta">${c.role==='admin'?'<span class="tag">Админ</span>':''}</div>`+
     `<div class="pills">
        ${c.shift?`<span class="pill shift">${esc(c.shift)}</span>`:''}
        ${c.workHours?`<span class="pill time">${esc(c.workHours)}</span>`:''}
@@ -283,7 +300,6 @@ async function move(operatorId, newStatus){
   if (newStatus==='Выходной' && !confirm('Перевести в «Выходной»? Будут сброшены итоги и старт смены.')) return;
   try{
     await api('/api/move',{method:'POST',body:JSON.stringify({operatorId:id,newStatus,token:state.session.token,note:''})});
-    // небольшой debounce не нужен — load() уже отменяет прошлые запросы
     await load();
   }catch(e){ console.warn('moveCard', e.message); }
 }
@@ -325,9 +341,8 @@ function readAndResizeImage(file, maxW){
   });
 }
 
-// ============ Timers / sums (оптимизация) ============
+// ============ Timers / sums ============
 function tickTimers(){
-  // Не тратим ресурсы, если вкладка скрыта или не доска
   if (document.hidden || state.page !== 'board') return;
   const list = document.querySelectorAll('.card'); if (!list.length) return;
 
@@ -413,17 +428,7 @@ document.addEventListener('dragleave', (e)=>{
   if (e.clientX<=0 || e.clientY<=0 || e.clientX>=window.innerWidth || e.clientY>=window.innerHeight) __asStop();
 });
 
-// ============ Filters & Reports ============
-function updateFilters(cards){
-  const select = document.getElementById('shiftFilter'); const set = new Set();
-  (cards||[]).forEach(c=>{ const v=(c.workHours||'').trim(); if(v) set.add(v); });
-  const items = Array.from(set).sort((a,b)=>a.localeCompare(b,'ru'));
-  select.innerHTML = '<option value="all">Все</option>' + items.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
-  select.value = (items.includes(state.filterShift) ? state.filterShift : 'all');
-}
-document.getElementById('shiftFilter').onchange = (e)=>{ state.filterShift=e.target.value; localStorage.setItem('shiftFilter', state.filterShift); render({statuses:state.statuses,cards:state.cards,serverNowIso:new Date().toISOString()}); };
-function matchesShiftFilter(card, filter){ if(filter==='all') return true; const s=String(card.workHours||'').trim(); if(!s) return false; return s===filter; }
-
+// ============ Reports ============
 function fillReportSelectors(cards){
   const opSel=document.getElementById('repOperator'), tlSel=document.getElementById('repTeamlead');
   const ops = Array.from(new Set(cards.map(c=>JSON.stringify({id:c.id,name:c.name})))) .map(s=>JSON.parse(s)) .sort((a,b)=>a.name.localeCompare(b.name,'ru'));
@@ -434,15 +439,12 @@ function fillReportSelectors(cards){
   if(!document.getElementById('repFrom').value) document.getElementById('repFrom').value = iso(today);
   if(!document.getElementById('repTo').value)   document.getElementById('repTo').value   = iso(today);
 }
-
 document.getElementById('btnBuildRep').onclick = async ()=>{
-  const from = document.getElementById('repFrom').value;   // YYYY-MM-DD
-  const to   = document.getElementById('repTo').value;     // YYYY-MM-DD
+  const from = document.getElementById('repFrom').value;
+  const to   = document.getElementById('repTo').value;
   const op   = document.getElementById('repOperator').value || '';
   const tl   = document.getElementById('repTeamlead').value || '';
-
   const q = new URLSearchParams({ from, to, operatorId: op, teamlead: tl });
-
   const statusEl = document.getElementById('repStatus');
   statusEl.textContent='Считаю...';
   try{
@@ -471,7 +473,6 @@ function fillRepTable(rows){
 }
 
 // ============ Buttons & Page switch ============
-document.getElementById('btnRefresh').onclick = fullReload;
 document.getElementById('btnReports').onclick = ()=> switchPage(state.page==='reports'?'board':'reports');
 document.getElementById('btnNewDay').onclick = async ()=>{
   if (!state.session) return;
@@ -488,7 +489,7 @@ function switchPage(page){
   if (isRep) stopPolling(); else { fullReload(); ensureBoardPolling(); }
 }
 
-// ============ Visibility pause (новое) ============
+// ============ Visibility pause ============
 document.addEventListener('visibilitychange', ()=>{
   if (document.hidden) {
     stopPolling();
@@ -499,6 +500,7 @@ document.addEventListener('visibilitychange', ()=>{
 
 // ============ Bootstrap ============
 (async function bootstrap(){
+  applyTheme(localStorage.getItem('theme') || 'dark');
   const sess = await restoreSession();
   if (sess){
     applySession(sess);
@@ -511,11 +513,11 @@ document.addEventListener('visibilitychange', ()=>{
   }
 })();
 
-/* ======== Автообновление только на доске ======== */
+/* ======== Автообновление только на доске (10 сек) ======== */
 let __pollId = 0;
 function ensureBoardPolling(){
   if (state.page !== 'board') return;
-  if (!__pollId) __pollId = setInterval(fullReload, 10000);
+  if (!__pollId) __pollId = setInterval(fullReload, 10000); // 10 000 мс
 }
 function stopPolling(){
   if (__pollId){ clearInterval(__pollId); __pollId = 0; }
