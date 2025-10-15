@@ -515,7 +515,7 @@ document.addEventListener('visibilitychange', ()=>{
 let __pollId = 0;
 function ensureBoardPolling(){
   if (state.page !== 'board') return;
-  if (!__pollId) __pollId = setInterval(fullReload, 3000);
+  if (!__pollId) __pollId = setInterval(fullReload, 10000);
 }
 function stopPolling(){
   if (__pollId){ clearInterval(__pollId); __pollId = 0; }
