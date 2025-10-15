@@ -235,11 +235,11 @@ function makeCard(c){
     if(!el.draggable){e.preventDefault();return;}
     el.classList.add('dragging');
     e.dataTransfer.setData('text/plain', cardId);
-    __asStart();     // автоскролл: старт
+    __asStart();
   });
   el.addEventListener('dragend', ()=>{
     el.classList.remove('dragging');
-    __asStop();      // автоскролл: стоп
+    __asStop();
   });
   return el;
 }
@@ -247,7 +247,7 @@ function enableDrop(zone){
   zone.addEventListener('dragover', e=>{
     e.preventDefault();
     zone.style.outline='2px dashed var(--accent)';
-    __asUpdateMouse(e);   // автоскролл: координаты мыши
+    __asUpdateMouse(e);
   });
   zone.addEventListener('dragleave', ()=> zone.style.outline='none');
   zone.addEventListener('drop', async e=>{
@@ -391,7 +391,7 @@ function updateFilters(cards){
   const select = document.getElementById('shiftFilter'); const set = new Set();
   (cards||[]).forEach(c=>{ const v=(c.workHours||'').trim(); if(v) set.add(v); });
   const items = Array.from(set).sort((a,b)=>a.localeCompare(b,'ru'));
-  select.innerHTML = '<option value="all">Все</option>' + items.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  select.innerHTML = '<option value="all">Все смены</option>' + items.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
   select.value = (items.includes(state.filterShift) ? state.filterShift : 'all');
 }
 document.getElementById('shiftFilter').onchange = (e)=>{ state.filterShift=e.target.value; localStorage.setItem('shiftFilter', state.filterShift); render({statuses:state.statuses,cards:state.cards,serverNowIso:new Date().toISOString()}); };
@@ -408,15 +408,18 @@ function fillReportSelectors(cards){
   if(!document.getElementById('repTo').value)   document.getElementById('repTo').value   = iso(today);
 }
 document.getElementById('btnBuildRep').onclick = async ()=>{
-  const from = document.getElementById('repFrom').value, to=document.getElementById('repTo').value;
-  const op=document.getElementById('repOperator').value, tl=document.getElementById('repTeamlead').value;
+  const from = document.getElementById('repFrom').value;   // YYYY-MM-DD
+  const to   = document.getElementById('repTo').value;     // YYYY-MM-DD
+  const op   = document.getElementById('repOperator').value || '';
+  const tl   = document.getElementById('repTeamlead').value || '';
+
   const q = new URLSearchParams({
-    fromIso: new Date(from).toISOString(),
-    toIso:   new Date(new Date(to).getTime()+24*3600*1000-1).toISOString(),
-    operatorId: op||'',
-    teamlead: tl||'',
-    token: state.session?.token || ''
+    from,
+    to,
+    operatorId: op,
+    teamlead: tl
   });
+
   const statusEl = document.getElementById('repStatus');
   statusEl.textContent='Считаю...';
   try{
@@ -425,7 +428,8 @@ document.getElementById('btnBuildRep').onclick = async ()=>{
     fillRepTable(rows);
     statusEl.textContent = rows.length ? `Строк: ${rows.length}` : 'Нет данных за период';
   }catch(e){
-    statusEl.textContent = 'Ошибка: ' + (e?.message || 'неизвестная');
+    console.error('Report API error:', e);
+    statusEl.textContent = 'Ошибка при формировании отчёта. Подробности — в консоли.';
   }
 };
 function secToHMS(s){ s=Math.max(0,Math.floor(s)); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60; const pad=n=>(n<10?'0':'')+n; return (h?pad(h)+':':'')+pad(m)+':'+pad(ss); }
@@ -487,3 +491,4 @@ function stopPolling(){
 </script>
 </body>
 </html>
+
