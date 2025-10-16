@@ -39,9 +39,21 @@
   .pill-upload{background:var(--btn);border:1px solid var(--btn-border);color:var(--muted);border-radius:999px;padding:4px 8px}
   .sum{margin-top:8px;font-size:12px;color:var(--muted)} .sum td{padding:2px 0}.sum td:last-child{text-align:right;font-variant-numeric:tabular-nums}
   .footer{padding:8px 16px;color:var(--muted);font-size:12px}.hidden{display:none}
+
+  /* Заглушка «только ПК» */
+  #mobileBlock{position:fixed;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:24px;z-index:9999;background:var(--bg);color:var(--text)}
+  #mobileBlock .card{max-width:560px}
 </style>
 </head>
 <body data-theme="dark">
+
+<!-- MOBILE GATE (покажется на мобилках/узком экране) -->
+<div id="mobileBlock">
+  <div class="card" style="padding:18px;border-radius:14px;border:1px solid var(--border);background:var(--panel);box-shadow:var(--card-shadow)">
+    <h2 style="margin:0 0 8px 0">Доступ только с ПК/ноутбука</h2>
+    <p style="margin:0;color:var(--muted)">Откройте эту страницу на компьютере с шириной окна не менее 1024 пикселей.</p>
+  </div>
+</div>
 
 <!-- LOGIN -->
 <div id="login">
@@ -61,9 +73,7 @@
   <header>
     <div>Вы: <span id="who">…</span> <span class="badge" id="roleBadge">Оператор</span></div>
     <div class="spacer"></div>
-    <!-- убрали select shiftFilter -->
     <button id="btnTheme" class="btn-chip" title="Переключить тему">Тема: тёмная</button>
-    <!-- убрали btnRefresh -->
     <button id="btnReports" class="btn-chip hidden">Отчёты</button>
     <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
     <button id="btnLogout" class="btn-chip">Выйти</button>
@@ -103,13 +113,28 @@
 </div>
 
 <script>
-const state = {
-  statuses:[], cards:[], session:null, serverOffsetMs:0, page:'board',
-  lastColumnsHash:{}
-};
-const MAX_DATAURL_LEN = 49000;
+/* ====== MOBILE GATE: блокируем мобилы/узкие окна ====== */
+function __isMobileOrNarrow(){
+  const ua = navigator.userAgent || '';
+  const isMobileUA = /(Android|iPhone|iPad|iPod|Mobile)/i.test(ua);
+  const narrow = window.innerWidth < 1024; // можно поднять/опустить порог
+  return isMobileUA || narrow;
+}
+(function gate(){
+  if (__isMobileOrNarrow()){
+    document.getElementById('mobileBlock').style.display='flex';
+    document.getElementById('login').style.display='none';
+    document.getElementById('topbar').classList.add('hidden');
+    document.getElementById('appBoard').classList.add('hidden');
+    document.getElementById('appFooter').classList.add('hidden');
+    document.body.style.overflow='hidden';
+    window.__blocked = true;
+  }
+  // Дополнительно: если пользователь растянет окно >=1024, можно авто-разблокировать:
+  // window.addEventListener('resize', ()=>{ location.reload(); });
+})();
 
-// ===== THEME =====
+/* ====== THEME ====== */
 function applyTheme(theme){
   document.body.setAttribute('data-theme', theme);
   localStorage.setItem('theme', theme);
@@ -120,6 +145,12 @@ document.getElementById('btnTheme').onclick = ()=>{
   const next = (document.body.getAttribute('data-theme')==='light') ? 'dark' : 'light';
   applyTheme(next);
 };
+
+const state = {
+  statuses:[], cards:[], session:null, serverOffsetMs:0, page:'board',
+  lastColumnsHash:{}
+};
+const MAX_DATAURL_LEN = 49000;
 
 // ============ API helper ============
 async function api(url, opts={}){
@@ -145,6 +176,7 @@ async function restoreSession(){
 
 // ============ Login ============
 document.getElementById('btnDoLogin').onclick = async ()=>{
+  if (window.__blocked) return;
   const code = (document.getElementById('codeInput').value||'').trim();
   try{
     const sess = await api('/api/login',{method:'POST',body:JSON.stringify({code})});
@@ -161,7 +193,7 @@ document.getElementById('btnLogout').onclick = ()=>{
 
 // ============ Load/render (с отменой старых запросов) ============
 let __loadCtrl = null;
-async function fullReload(){ await load(); }
+async function fullReload(){ if (!window.__blocked) await load(); }
 
 async function load(){
   if (__loadCtrl) { try{ __loadCtrl.abort(); }catch{} }
@@ -208,7 +240,7 @@ function renderSummary(byStatus){
     const chip = document.createElement('div'); chip.className='chip';
     chip.innerHTML = `<span>${s}</span><span class="count">${(byStatus[s]||[]).length}</span>`;
     chip.onclick = async ()=>{
-      if (!state.session) return;
+      if (!state.session || window.__blocked) return;
       const myId = (state.session.operatorId||'').trim(); if (!myId) return;
       await move(myId, s);
     };
@@ -270,7 +302,7 @@ function makeCard(c){
      <div class="startline"><span class="start-text"></span></div>`;
   el.querySelector('.pill-upload').onclick = ()=> triggerAddImage(cardId);
   el.addEventListener('dragstart', e=>{
-    if(!el.draggable){e.preventDefault();return;}
+    if(!el.draggable || window.__blocked){e.preventDefault();return;}
     el.classList.add('dragging');
     e.dataTransfer.setData('text/plain', cardId);
     __asStart();
@@ -290,12 +322,13 @@ function enableDrop(zone){
   zone.addEventListener('dragleave', ()=> zone.style.outline='none');
   zone.addEventListener('drop', async e=>{
     e.preventDefault(); zone.style.outline='none';
+    if (window.__blocked) return;
     const id = (e.dataTransfer.getData('text/plain')||'').trim(); if(!id) return;
     const to = zone.dataset.status; await move(id,to);
   });
 }
 async function move(operatorId, newStatus){
-  if (!state.session) return;
+  if (!state.session || window.__blocked) return;
   const id = String(operatorId||'').trim(); if (!id) return;
   if (newStatus==='Выходной' && !confirm('Перевести в «Выходной»? Будут сброшены итоги и старт смены.')) return;
   try{
@@ -306,7 +339,7 @@ async function move(operatorId, newStatus){
 
 // ============ Images ============
 async function triggerAddImage(operatorId){
-  if (!state.session) return;
+  if (!state.session || window.__blocked) return;
   const input = document.createElement('input'); input.type='file'; input.accept='image/*'; input.style.display='none';
   input.onchange = async ()=>{
     const f = input.files?.[0]; if (!f) return;
@@ -343,7 +376,7 @@ function readAndResizeImage(file, maxW){
 
 // ============ Timers / sums ============
 function tickTimers(){
-  if (document.hidden || state.page !== 'board') return;
+  if (document.hidden || state.page !== 'board' || window.__blocked) return;
   const list = document.querySelectorAll('.card'); if (!list.length) return;
 
   const nowMs = Date.now() + (state.serverOffsetMs||0);
@@ -440,6 +473,7 @@ function fillReportSelectors(cards){
   if(!document.getElementById('repTo').value)   document.getElementById('repTo').value   = iso(today);
 }
 document.getElementById('btnBuildRep').onclick = async ()=>{
+  if (window.__blocked) return;
   const from = document.getElementById('repFrom').value;
   const to   = document.getElementById('repTo').value;
   const op   = document.getElementById('repOperator').value || '';
@@ -475,7 +509,7 @@ function fillRepTable(rows){
 // ============ Buttons & Page switch ============
 document.getElementById('btnReports').onclick = ()=> switchPage(state.page==='reports'?'board':'reports');
 document.getElementById('btnNewDay').onclick = async ()=>{
-  if (!state.session) return;
+  if (!state.session || window.__blocked) return;
   if (!confirm('Начать новый день? Всех переведёт в «Выходной», обнулит итоги и старт смены.')) return;
   const actor = state.session.displayName || state.session.operatorId;
   try{ await api('/api/newDay',{method:'POST',body:JSON.stringify({token:state.session.token, actor})}); await fullReload(); }catch(e){ alert('Нет прав'); }
@@ -491,7 +525,7 @@ function switchPage(page){
 
 // ============ Visibility pause ============
 document.addEventListener('visibilitychange', ()=>{
-  if (document.hidden) {
+  if (document.hidden || window.__blocked) {
     stopPolling();
   } else {
     if (state.page === 'board') { fullReload(); ensureBoardPolling(); }
@@ -501,6 +535,7 @@ document.addEventListener('visibilitychange', ()=>{
 // ============ Bootstrap ============
 (async function bootstrap(){
   applyTheme(localStorage.getItem('theme') || 'dark');
+  if (window.__blocked) return; // ничего не делаем на мобилках/узком окне
   const sess = await restoreSession();
   if (sess){
     applySession(sess);
@@ -516,7 +551,7 @@ document.addEventListener('visibilitychange', ()=>{
 /* ======== Автообновление только на доске (10 сек) ======== */
 let __pollId = 0;
 function ensureBoardPolling(){
-  if (state.page !== 'board') return;
+  if (state.page !== 'board' || window.__blocked) return;
   if (!__pollId) __pollId = setInterval(fullReload, 10000); // 10 000 мс
 }
 function stopPolling(){
