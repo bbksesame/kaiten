@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Учёт перерывов</title>
+<title>Учёт перерывов (канбан)</title>
 <style>
   :root{
     --bg:#151922;--panel:#1d2330;--card:#262f40;--text:#e9edf4;--muted:#a2adbb;--accent:#7aa2ff;
@@ -25,7 +25,8 @@
   button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
   button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
   .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
-  .board{display:flex;gap:16px;padding:10px 16px 16px;overflow-x:auto}
+  .board{display:flex;gap:16px;padding:10px 16px 16px;overflow:auto;cursor:default}
+  .board.grabbing{cursor:grabbing}
   .col{min-width:280px;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:10px;display:flex;flex-direction:column}
   .drop{flex:1;min-height:520px;padding:6px;border-radius:12px}
   .card{background:var(--card);border:1px solid var(--border);border-radius:var(--card-radius);padding:10px;margin:8px;cursor:grab;box-shadow:var(--card-shadow)}
@@ -47,11 +48,10 @@
 </head>
 <body data-theme="dark">
 
-<!-- MOBILE GATE (покажется на мобилках/узком экране) -->
+<!-- MOBILE GATE -->
 <div id="mobileBlock">
   <div class="card" style="padding:18px;border-radius:14px;border:1px solid var(--border);background:var(--panel);box-shadow:var(--card-shadow)">
-    <h2 style="margin:0 0 8px 0">Доступ только с ПК/ноутбука</h2>
-    <p style="margin:0;color:var(--muted)">Попался хитрец.....</p>
+    <h2 style="margin:0">Доступ только с ПК/ноутбука</h2>
   </div>
 </div>
 
@@ -83,7 +83,7 @@
 
 <!-- BOARD -->
 <div id="appBoard" class="board hidden"></div>
-<div id="appFooter" class="footer hidden">Перетаскивайте карточки между колонками. Таймер — длительность текущего статуса.</div>
+<div id="appFooter" class="footer hidden">Перетаскивайте карточки между колонками. Таймер — длительность текущего статуса. Двигайте полотно мышью (зажмите ЛКМ в пустой области).</div>
 
 <!-- REPORTS -->
 <div id="reports" class="hidden" style="padding:16px">
@@ -113,11 +113,11 @@
 </div>
 
 <script>
-/* ====== MOBILE GATE: блокируем мобилы/узкие окна ====== */
+/* ====== MOBILE GATE ====== */
 function __isMobileOrNarrow(){
   const ua = navigator.userAgent || '';
   const isMobileUA = /(Android|iPhone|iPad|iPod|Mobile)/i.test(ua);
-  const narrow = window.innerWidth < 1024; // можно поднять/опустить порог
+  const narrow = window.innerWidth < 1024;
   return isMobileUA || narrow;
 }
 (function gate(){
@@ -130,8 +130,6 @@ function __isMobileOrNarrow(){
     document.body.style.overflow='hidden';
     window.__blocked = true;
   }
-  // Дополнительно: если пользователь растянет окно >=1024, можно авто-разблокировать:
-  // window.addEventListener('resize', ()=>{ location.reload(); });
 })();
 
 /* ====== THEME ====== */
@@ -191,7 +189,7 @@ document.getElementById('btnLogout').onclick = ()=>{
   localStorage.removeItem('token'); location.reload();
 };
 
-// ============ Load/render (с отменой старых запросов) ============
+// ============ Load/render ============
 let __loadCtrl = null;
 async function fullReload(){ if (!window.__blocked) await load(); }
 
@@ -422,10 +420,10 @@ function renderStartLine(el){
   span.textContent = same ? ('Начал смену в '+hhmm) : ('Начал смену '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+' в '+hhmm);
 }
 
-/* ============ AutoScroll while dragging ============ */
+/* ============ AutoScroll while dragging — чувствительнее в 2 раза ============ */
 let __asRAF = 0, __asActive = false, __mx = 0, __my = 0;
-const __EDGE = 80;       // ширина активной зоны у краёв окна (px)
-const __MAXSPEED = 32;   // скорость прокрутки (px/кадр)
+const __EDGE = 160;      // было 80 — зона у краёв окна (px)
+const __MAXSPEED = 64;   // было 32 — скорость прокрутки (px/кадр)
 
 function __asUpdateMouse(e){
   __mx = e.clientX; __my = e.clientY;
@@ -460,6 +458,43 @@ document.addEventListener('drop', ()=> __asStop());
 document.addEventListener('dragleave', (e)=>{
   if (e.clientX<=0 || e.clientY<=0 || e.clientX>=window.innerWidth || e.clientY>=window.innerHeight) __asStop();
 });
+
+/* ============ PANNING: перемещение полотна мышью ============ */
+(function enablePanning(){
+  const board = document.getElementById('appBoard');
+  let isDown = false, startX = 0, startY = 0, sl = 0, st = 0;
+
+  board.addEventListener('mousedown', (e)=>{
+    // Не начинать панорамирование, если жмём по карточке/кнопке/инпуту
+    if (e.button !== 0) return;
+    if (e.target.closest('.card') || /(input|button|select|textarea)/i.test(e.target.tagName)) return;
+    isDown = true;
+    board.classList.add('grabbing');
+    startX = e.clientX;
+    startY = e.clientY;
+    sl = board.scrollLeft;
+    st = board.scrollTop;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e)=>{
+    if (!isDown) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    board.scrollLeft = sl - dx;
+    board.scrollTop  = st - dy;
+  });
+  window.addEventListener('mouseup', ()=>{
+    if (!isDown) return;
+    isDown = false;
+    board.classList.remove('grabbing');
+  });
+  // если ушли курсором за пределы окна при зажатой кнопке — отпустить
+  document.addEventListener('mouseleave', ()=>{
+    if (!isDown) return;
+    isDown = false;
+    board.classList.remove('grabbing');
+  });
+})();
 
 // ============ Reports ============
 function fillReportSelectors(cards){
@@ -535,7 +570,7 @@ document.addEventListener('visibilitychange', ()=>{
 // ============ Bootstrap ============
 (async function bootstrap(){
   applyTheme(localStorage.getItem('theme') || 'dark');
-  if (window.__blocked) return; // ничего не делаем на мобилках/узком окне
+  if (window.__blocked) return;
   const sess = await restoreSession();
   if (sess){
     applySession(sess);
@@ -552,7 +587,7 @@ document.addEventListener('visibilitychange', ()=>{
 let __pollId = 0;
 function ensureBoardPolling(){
   if (state.page !== 'board' || window.__blocked) return;
-  if (!__pollId) __pollId = setInterval(fullReload, 10000); // 10 000 мс
+  if (!__pollId) __pollId = setInterval(fullReload, 10000);
 }
 function stopPolling(){
   if (__pollId){ clearInterval(__pollId); __pollId = 0; }
