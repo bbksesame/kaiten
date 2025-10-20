@@ -25,7 +25,13 @@
   button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
   button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
   .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
-  .board{display:flex;gap:16px;padding:10px 16px 16px;overflow:auto;cursor:default}
+
+  /* Сделаем доску ограниченной по высоте, чтобы был вертикальный скролл внутри при необходимости */
+  .board{
+    display:flex;gap:16px;padding:10px 16px 16px;
+    overflow:auto;cursor:default;
+    max-height: calc(100vh - 160px); /* топбар+подпись снизу */
+  }
   .board.grabbing{cursor:grabbing}
   .col{min-width:280px;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:10px;display:flex;flex-direction:column}
   .drop{flex:1;min-height:520px;padding:6px;border-radius:12px}
@@ -83,7 +89,7 @@
 
 <!-- BOARD -->
 <div id="appBoard" class="board hidden"></div>
-<div id="appFooter" class="footer hidden">Перетаскивайте карточки между колонками. Таймер — длительность текущего статуса. Двигайте полотно мышью (зажмите ЛКМ в пустой области).</div>
+<div id="appFooter" class="footer hidden">Перетаскивайте карточки между колонками. Панорамирование: зажмите ЛКМ в пустой области и тяните.</div>
 
 <!-- REPORTS -->
 <div id="reports" class="hidden" style="padding:16px">
@@ -240,6 +246,9 @@ function renderSummary(byStatus){
     chip.onclick = async ()=>{
       if (!state.session || window.__blocked) return;
       const myId = (state.session.operatorId||'').trim(); if (!myId) return;
+      // если уже в этом статусе — ничего не делаем
+      const me = (state.cards||[]).find(x=>String(x.id)===String(myId));
+      if (me && me.status === s) return;
       await move(myId, s);
     };
     summary.appendChild(chip);
@@ -322,12 +331,23 @@ function enableDrop(zone){
     e.preventDefault(); zone.style.outline='none';
     if (window.__blocked) return;
     const id = (e.dataTransfer.getData('text/plain')||'').trim(); if(!id) return;
-    const to = zone.dataset.status; await move(id,to);
+    const to = zone.dataset.status;
+
+    // ⚠️ если карточка уже в этом же статусе — выходим (таймер не трогаем)
+    const card = (state.cards||[]).find(x=>String(x.id)===String(id));
+    if (card && card.status === to) return;
+
+    await move(id,to);
   });
 }
 async function move(operatorId, newStatus){
   if (!state.session || window.__blocked) return;
   const id = String(operatorId||'').trim(); if (!id) return;
+
+  // ⚠️ защита от «в тот же статус» и при клике по чипам
+  const cur = (state.cards||[]).find(x=>String(x.id)===String(id));
+  if (cur && cur.status === newStatus) return;
+
   if (newStatus==='Выходной' && !confirm('Перевести в «Выходной»? Будут сброшены итоги и старт смены.')) return;
   try{
     await api('/api/move',{method:'POST',body:JSON.stringify({operatorId:id,newStatus,token:state.session.token,note:''})});
@@ -444,7 +464,15 @@ function __asStart(){
 
     const board = document.querySelector('.board');
     if (board && dx) board.scrollLeft += dx;
-    if (dy) window.scrollBy(0, dy);
+
+    // вертикальный автоскролл: если у board нет скролла по Y — крутим окно
+    if (dy) {
+      if (board && board.scrollHeight > board.clientHeight) {
+        board.scrollTop += dy;
+      } else {
+        window.scrollBy(0, dy);
+      }
+    }
   };
   loop();
 }
@@ -459,41 +487,44 @@ document.addEventListener('dragleave', (e)=>{
   if (e.clientX<=0 || e.clientY<=0 || e.clientX>=window.innerWidth || e.clientY>=window.innerHeight) __asStop();
 });
 
-/* ============ PANNING: перемещение полотна мышью ============ */
+/* ============ PANNING: перемещение полотна мышью (X+Y) ============ */
 (function enablePanning(){
   const board = document.getElementById('appBoard');
   let isDown = false, startX = 0, startY = 0, sl = 0, st = 0;
 
   board.addEventListener('mousedown', (e)=>{
-    // Не начинать панорамирование, если жмём по карточке/кнопке/инпуту
     if (e.button !== 0) return;
     if (e.target.closest('.card') || /(input|button|select|textarea)/i.test(e.target.tagName)) return;
     isDown = true;
     board.classList.add('grabbing');
-    startX = e.clientX;
-    startY = e.clientY;
-    sl = board.scrollLeft;
-    st = board.scrollTop;
+    startX = e.clientX; startY = e.clientY;
+    sl = board.scrollLeft; st = board.scrollTop;
     e.preventDefault();
   });
   window.addEventListener('mousemove', (e)=>{
     if (!isDown) return;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
+
     board.scrollLeft = sl - dx;
-    board.scrollTop  = st - dy;
+
+    // если у board есть вертикальный скролл — используем его, иначе — прокручиваем окно
+    if (board.scrollHeight > board.clientHeight) {
+      board.scrollTop  = st - dy;
+    } else {
+      window.scrollTo({ top: window.scrollY - dy, left: window.scrollX });
+      // синхронизируем стартовую точку, чтобы движение было «как рука»
+      startY = e.clientY; // чтобы не улетало при window.scrollTo
+      st = 0;
+    }
   });
-  window.addEventListener('mouseup', ()=>{
+  const stopPan = ()=>{
     if (!isDown) return;
     isDown = false;
     board.classList.remove('grabbing');
-  });
-  // если ушли курсором за пределы окна при зажатой кнопке — отпустить
-  document.addEventListener('mouseleave', ()=>{
-    if (!isDown) return;
-    isDown = false;
-    board.classList.remove('grabbing');
-  });
+  };
+  window.addEventListener('mouseup', stopPan);
+  document.addEventListener('mouseleave', stopPan);
 })();
 
 // ============ Reports ============
@@ -595,3 +626,4 @@ function stopPolling(){
 </script>
 </body>
 </html>
+
