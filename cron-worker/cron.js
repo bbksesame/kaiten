@@ -1,5 +1,6 @@
 export default {
   async scheduled(event, env, ctx) {
+    console.log('Current worker time:', new Date().toString());
     try {
       // ---- час и дата "как есть" (в TZ аккаунта). Нам не нужно пересчитывать: триггеры приходят ровно в :58
       const now = new Date();
