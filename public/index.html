@@ -11,7 +11,6 @@
     --danger:#3a1f25;--danger-b:#6c2b37;--card-52:#2a3446;--border-52:#4a6183;--card-22:#342c3a;--border-22:#73507f;
     --pill-shift-bg:#3b3317;--pill-shift-text:#f7e4a2;--pill-time-bg:#442a24;--pill-time-text:#ffd9cd;
     --chip-bg:#222a3b;--chip-border:#51608a;--chip-hover:#2c3650;--card-shadow:0 6px 18px rgba(0,0,0,.25);--card-radius:14px}
-  /* Светлая тема */
   [data-theme="light"]{
     --bg:#f5f7fb;--panel:#ffffff;--card:#ffffff;--text:#0f1625;--muted:#5b6678;--accent:#2b5cff;
     --ok:#2aa36b;--border:#dfe5f2;--dash:#e6ebf5;--timer:#146c2e;--btn:#eef2fb;--btn-border:#d6def0;--btn-hover:#e6ecfa;
@@ -26,11 +25,10 @@
   button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
   .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
 
-  /* Сделаем доску ограниченной по высоте, чтобы был вертикальный скролл внутри при необходимости */
   .board{
     display:flex;gap:16px;padding:10px 16px 16px;
     overflow:auto;cursor:default;
-    max-height: calc(100vh - 160px); /* топбар+подпись снизу */
+    max-height: calc(100vh - 160px);
   }
   .board.grabbing{cursor:grabbing}
   .col{min-width:280px;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:10px;display:flex;flex-direction:column}
@@ -46,7 +44,9 @@
   .pill-upload{background:var(--btn);border:1px solid var(--btn-border);color:var(--muted);border-radius:999px;padding:4px 8px}
   .sum{margin-top:8px;font-size:12px;color:var(--muted)} .sum td{padding:2px 0}.sum td:last-child{text-align:right;font-variant-numeric:tabular-nums}
   .footer{padding:8px 16px;color:var(--muted);font-size:12px}.hidden{display:none}
-
+</style>
+</head>
+<body data-theme="dark">
 
 <!-- LOGIN -->
 <div id="login">
@@ -106,24 +106,8 @@
 </div>
 
 <script>
-/* ====== MOBILE GATE ====== */
-function __isMobileOrNarrow(){
-  const ua = navigator.userAgent || '';
-  const isMobileUA = /(Android|iPhone|iPad|iPod|Mobile)/i.test(ua);
-  const narrow = window.innerWidth < 1024;
-  return isMobileUA || narrow;
-}
-(function gate(){
-  if (__isMobileOrNarrow()){
-    document.getElementById('mobileBlock').style.display='flex';
-    document.getElementById('login').style.display='none';
-    document.getElementById('topbar').classList.add('hidden');
-    document.getElementById('appBoard').classList.add('hidden');
-    document.getElementById('appFooter').classList.add('hidden');
-    document.body.style.overflow='hidden';
-    window.__blocked = true;
-  }
-})();
+// Разрешаем работу везде
+window.__blocked = false;
 
 /* ====== THEME ====== */
 function applyTheme(theme){
@@ -167,7 +151,6 @@ async function restoreSession(){
 
 // ============ Login ============
 document.getElementById('btnDoLogin').onclick = async ()=>{
-  if (window.__blocked) return;
   const code = (document.getElementById('codeInput').value||'').trim();
   try{
     const sess = await api('/api/login',{method:'POST',body:JSON.stringify({code})});
@@ -184,7 +167,7 @@ document.getElementById('btnLogout').onclick = ()=>{
 
 // ============ Load/render ============
 let __loadCtrl = null;
-async function fullReload(){ if (!window.__blocked) await load(); }
+async function fullReload(){ await load(); }
 
 async function load(){
   if (__loadCtrl) { try{ __loadCtrl.abort(); }catch{} }
@@ -231,11 +214,10 @@ function renderSummary(byStatus){
     const chip = document.createElement('div'); chip.className='chip';
     chip.innerHTML = `<span>${s}</span><span class="count">${(byStatus[s]||[]).length}</span>`;
     chip.onclick = async ()=>{
-      if (!state.session || window.__blocked) return;
+      if (!state.session) return;
       const myId = (state.session.operatorId||'').trim(); if (!myId) return;
-      // если уже в этом статусе — ничего не делаем
       const me = (state.cards||[]).find(x=>String(x.id)===String(myId));
-      if (me && me.status === s) return;
+      if (me && me.status === s) return; // не дёргаем бэк, если тот же статус
       await move(myId, s);
     };
     summary.appendChild(chip);
@@ -296,7 +278,7 @@ function makeCard(c){
      <div class="startline"><span class="start-text"></span></div>`;
   el.querySelector('.pill-upload').onclick = ()=> triggerAddImage(cardId);
   el.addEventListener('dragstart', e=>{
-    if(!el.draggable || window.__blocked){e.preventDefault();return;}
+    if(!el.draggable){e.preventDefault();return;}
     el.classList.add('dragging');
     e.dataTransfer.setData('text/plain', cardId);
     __asStart();
@@ -316,25 +298,18 @@ function enableDrop(zone){
   zone.addEventListener('dragleave', ()=> zone.style.outline='none');
   zone.addEventListener('drop', async e=>{
     e.preventDefault(); zone.style.outline='none';
-    if (window.__blocked) return;
     const id = (e.dataTransfer.getData('text/plain')||'').trim(); if(!id) return;
     const to = zone.dataset.status;
-
-    // ⚠️ если карточка уже в этом же статусе — выходим (таймер не трогаем)
     const card = (state.cards||[]).find(x=>String(x.id)===String(id));
-    if (card && card.status === to) return;
-
+    if (card && card.status === to) return; // не сбрасываем таймеры
     await move(id,to);
   });
 }
 async function move(operatorId, newStatus){
-  if (!state.session || window.__blocked) return;
+  if (!state.session) return;
   const id = String(operatorId||'').trim(); if (!id) return;
-
-  // ⚠️ защита от «в тот же статус» и при клике по чипам
   const cur = (state.cards||[]).find(x=>String(x.id)===String(id));
   if (cur && cur.status === newStatus) return;
-
   if (newStatus==='Выходной' && !confirm('Перевести в «Выходной»? Будут сброшены итоги и старт смены.')) return;
   try{
     await api('/api/move',{method:'POST',body:JSON.stringify({operatorId:id,newStatus,token:state.session.token,note:''})});
@@ -344,7 +319,7 @@ async function move(operatorId, newStatus){
 
 // ============ Images ============
 async function triggerAddImage(operatorId){
-  if (!state.session || window.__blocked) return;
+  if (!state.session) return;
   const input = document.createElement('input'); input.type='file'; input.accept='image/*'; input.style.display='none';
   input.onchange = async ()=>{
     const f = input.files?.[0]; if (!f) return;
@@ -381,7 +356,7 @@ function readAndResizeImage(file, maxW){
 
 // ============ Timers / sums ============
 function tickTimers(){
-  if (document.hidden || state.page !== 'board' || window.__blocked) return;
+  if (document.hidden || state.page !== 'board') return;
   const list = document.querySelectorAll('.card'); if (!list.length) return;
 
   const nowMs = Date.now() + (state.serverOffsetMs||0);
@@ -427,47 +402,31 @@ function renderStartLine(el){
   span.textContent = same ? ('Начал смену в '+hhmm) : ('Начал смену '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+' в '+hhmm);
 }
 
-/* ============ AutoScroll while dragging — чувствительнее в 2 раза ============ */
+/* ============ AutoScroll while dragging (чувствительнее) ============ */
 let __asRAF = 0, __asActive = false, __mx = 0, __my = 0;
-const __EDGE = 160;      // было 80 — зона у краёв окна (px)
-const __MAXSPEED = 64;   // было 32 — скорость прокрутки (px/кадр)
-
-function __asUpdateMouse(e){
-  __mx = e.clientX; __my = e.clientY;
-  if (!__asActive) __asStart();
-}
+const __EDGE = 160;
+const __MAXSPEED = 64;
+function __asUpdateMouse(e){ __mx = e.clientX; __my = e.clientY; if (!__asActive) __asStart(); }
 function __asStart(){
   __asActive = true;
   const loop = ()=>{
     __asRAF = requestAnimationFrame(loop);
     const vw = window.innerWidth, vh = window.innerHeight;
     let dx = 0, dy = 0;
-
-    if (__mx < __EDGE)                dx = -((__EDGE - __mx)/__EDGE) * __MAXSPEED;
-    else if (vw - __mx < __EDGE)      dx =  ((__EDGE - (vw - __mx))/__EDGE) * __MAXSPEED;
-
-    if (__my < __EDGE)                dy = -((__EDGE - __my)/__EDGE) * __MAXSPEED;
-    else if (vh - __my < __EDGE)      dy =  ((__EDGE - (vh - __my))/__EDGE) * __MAXSPEED;
-
+    if (__mx < __EDGE) dx = -((__EDGE - __mx)/__EDGE) * __MAXSPEED;
+    else if (vw - __mx < __EDGE) dx =  ((__EDGE - (vw - __mx))/__EDGE) * __MAXSPEED;
+    if (__my < __EDGE) dy = -((__EDGE - __my)/__EDGE) * __MAXSPEED;
+    else if (vh - __my < __EDGE) dy =  ((__EDGE - (vh - __my))/__EDGE) * __MAXSPEED;
     const board = document.querySelector('.board');
     if (board && dx) board.scrollLeft += dx;
-
-    // вертикальный автоскролл: если у board нет скролла по Y — крутим окно
     if (dy) {
-      if (board && board.scrollHeight > board.clientHeight) {
-        board.scrollTop += dy;
-      } else {
-        window.scrollBy(0, dy);
-      }
+      if (board && board.scrollHeight > board.clientHeight) board.scrollTop += dy;
+      else window.scrollBy(0, dy);
     }
   };
   loop();
 }
-function __asStop(){
-  __asActive = false;
-  if (__asRAF) cancelAnimationFrame(__asRAF);
-  __asRAF = 0;
-}
+function __asStop(){ __asActive = false; if (__asRAF) cancelAnimationFrame(__asRAF); __asRAF = 0; }
 document.addEventListener('dragover', (e)=>{ __asUpdateMouse(e); });
 document.addEventListener('drop', ()=> __asStop());
 document.addEventListener('dragleave', (e)=>{
@@ -492,17 +451,11 @@ document.addEventListener('dragleave', (e)=>{
     if (!isDown) return;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
-
     board.scrollLeft = sl - dx;
-
-    // если у board есть вертикальный скролл — используем его, иначе — прокручиваем окно
-    if (board.scrollHeight > board.clientHeight) {
-      board.scrollTop  = st - dy;
-    } else {
+    if (board.scrollHeight > board.clientHeight) board.scrollTop  = st - dy;
+    else {
       window.scrollTo({ top: window.scrollY - dy, left: window.scrollX });
-      // синхронизируем стартовую точку, чтобы движение было «как рука»
-      startY = e.clientY; // чтобы не улетало при window.scrollTo
-      st = 0;
+      startY = e.clientY; st = 0;
     }
   });
   const stopPan = ()=>{
@@ -526,7 +479,6 @@ function fillReportSelectors(cards){
   if(!document.getElementById('repTo').value)   document.getElementById('repTo').value   = iso(today);
 }
 document.getElementById('btnBuildRep').onclick = async ()=>{
-  if (window.__blocked) return;
   const from = document.getElementById('repFrom').value;
   const to   = document.getElementById('repTo').value;
   const op   = document.getElementById('repOperator').value || '';
@@ -562,7 +514,7 @@ function fillRepTable(rows){
 // ============ Buttons & Page switch ============
 document.getElementById('btnReports').onclick = ()=> switchPage(state.page==='reports'?'board':'reports');
 document.getElementById('btnNewDay').onclick = async ()=>{
-  if (!state.session || window.__blocked) return;
+  if (!state.session) return;
   if (!confirm('Начать новый день? Всех переведёт в «Выходной», обнулит итоги и старт смены.')) return;
   const actor = state.session.displayName || state.session.operatorId;
   try{ await api('/api/newDay',{method:'POST',body:JSON.stringify({token:state.session.token, actor})}); await fullReload(); }catch(e){ alert('Нет прав'); }
@@ -578,17 +530,13 @@ function switchPage(page){
 
 // ============ Visibility pause ============
 document.addEventListener('visibilitychange', ()=>{
-  if (document.hidden || window.__blocked) {
-    stopPolling();
-  } else {
-    if (state.page === 'board') { fullReload(); ensureBoardPolling(); }
-  }
+  if (document.hidden) stopPolling();
+  else if (state.page === 'board') { fullReload(); ensureBoardPolling(); }
 });
 
 // ============ Bootstrap ============
 (async function bootstrap(){
   applyTheme(localStorage.getItem('theme') || 'dark');
-  if (window.__blocked) return;
   const sess = await restoreSession();
   if (sess){
     applySession(sess);
@@ -604,7 +552,7 @@ document.addEventListener('visibilitychange', ()=>{
 /* ======== Автообновление только на доске (10 сек) ======== */
 let __pollId = 0;
 function ensureBoardPolling(){
-  if (state.page !== 'board' || window.__blocked) return;
+  if (state.page !== 'board') return;
   if (!__pollId) __pollId = setInterval(fullReload, 10000);
 }
 function stopPolling(){
