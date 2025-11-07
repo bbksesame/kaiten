@@ -93,7 +93,7 @@
     <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
     <button id="btnReports" class="btn-chip hidden">Отчёты</button>
 
-    <!-- Новая кнопка ПРОГНОЗ -->
+    <!-- Кнопка ПРОГНОЗ в правом верхнем углу -->
     <button id="k-forecast-btn" class="btn-chip">Прогноз</button>
 
     <button id="btnLogout" class="btn-chip">Выйти</button>
@@ -144,6 +144,7 @@
   </div>
 </div>
 
+  
 <script>
 // Разрешаем работу везде
 window.__blocked = false;
@@ -189,13 +190,13 @@ async function restoreSession(){
 }
 
 // ============ Login ============
-// 👇 добавил сохранение 6-значного кода в localStorage ('kaiten_code')
+// сохраняем 6-значный код в localStorage ('kaiten_code') — нужен модалке «Прогноз»
 document.getElementById('btnDoLogin').onclick = async ()=>{
   const code = (document.getElementById('codeInput').value||'').trim();
   try{
     const sess = await api('/api/login',{method:'POST',body:JSON.stringify({code})});
     localStorage.setItem('token', sess.token);
-    localStorage.setItem('kaiten_code', code);   // <<< ВАЖНО: для модалки «Прогноз»
+    localStorage.setItem('kaiten_code', code);
 
     applySession(sess);
     document.getElementById('login').style.display='none';
@@ -205,7 +206,7 @@ document.getElementById('btnDoLogin').onclick = async ()=>{
 };
 document.getElementById('btnLogout').onclick = ()=>{
   localStorage.removeItem('token');
-  // по желанию можно очищать и kaiten_code:
+  // при желании можно чистить и kaiten_code:
   // localStorage.removeItem('kaiten_code');
   location.reload();
 };
@@ -624,7 +625,7 @@ document.addEventListener('click', (e)=>{
 });
 document.addEventListener('keydown', e => { if(e.key==='Escape') kModal(false); });
 
-/** Рендер плиток */
+/** Хелперы рендера */
 function toMMSS(total){ const n=Number(total); if(!isFinite(n)) return ''; const m=Math.floor(n/60),s=n%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
 function norm(v){ return (v===null||v===undefined||String(v).trim()==='') ? '—' : String(v); }
 function pickStatus(key, raw){
@@ -642,6 +643,12 @@ function card(title, value, hint){
   let shown = value;
   if ((title==='RT'||title==='ART') && value && value!=='—') shown = toMMSS(Number(value));
   return `<div class="kf-card ${cls}"><div class="kf-title">${title}${hint?` <span class="kf-chip">${hint}</span>`:''}</div><div class="kf-val">${norm(shown)}</div></div>`;
+}
+/** Локализованный вывод времени обновления */
+function fmtLocal(iso){
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('ru-RU', { hour12: false });
 }
 
 /** Основная логика */
@@ -681,6 +688,10 @@ async function showForecast(){
         <div style="font-weight:700">${js.operator}</div>
       </div>
       <div class="kf-grid">${tiles.join('')}</div>
+      <div class="kf-row" style="margin-top:12px">
+        <div class="kf-chip">Дата обновления</div>
+        <div>${fmtLocal(js.updatedAt)}</div>
+      </div>
     `;
   }catch(err){
     body.innerHTML = `<div class="kf-card kf-bad"><div class="kf-title">Ошибка</div><div class="kf-val">${err.message}</div></div>`;
