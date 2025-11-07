@@ -1,74 +1,77 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  +  <style>#btnNewDay{display:none !important;}</style>
+  <style>#btnNewDay{display:none !important;}</style>
 
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Учёт перерывов (канбан)</title>
-<style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Учёт перерывов (канбан)</title>
 
-  .k-forecast-btn{background:#7aa2ff;color:#0b1324;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
-.k-forecast-modal{position:fixed;inset:0;display:none;z-index:9999}
-.k-forecast-modal[aria-hidden="false"]{display:block}
-.k-forecast-backdrop{position:absolute;inset:0;background:rgba(7,10,18,.55)}
-.k-forecast-panel{position:relative;max-width:880px;margin:6vh auto;background:#121829;color:#e8eef9;border:1px solid #2a3550;border-radius:16px;box-shadow:0 16px 56px rgba(0,0,0,.4);overflow:hidden}
-.k-forecast-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #2a3550}
-.k-forecast-close{background:transparent;color:#9fb2d1;border:0;font-size:24px;cursor:pointer;line-height:1}
-.k-forecast-body{padding:16px}
-.kf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-.kf-card{background:#0f1420;border:1px solid #22304e;border-radius:12px;padding:12px;min-height:92px;display:flex;flex-direction:column;gap:8px}
-.kf-title{font-size:12px;color:#9fb2d1}
-.kf-val{font-size:26px;font-weight:800}
-.kf-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#9fb2d1}
-.kf-ok  .kf-val{color:#28d17a}
-.kf-warn .kf-val{color:#ffb020}
-.kf-bad .kf-val{color:#ff6b6b}
-.kf-mute .kf-val{color:#9fb2d1}
-.kf-row{display:flex;align-items:center;justify-content:space-between}
+  <!-- === Прогноз (стили) === -->
+  <style>
+    /* базовая тема приложения */
+    :root{
+      --bg:#151922;--panel:#1d2330;--card:#262f40;--text:#e9edf4;--muted:#a2adbb;--accent:#7aa2ff;
+      --ok:#33d17a;--border:#414a60;--dash:#343c52;--timer:#b6f0b6;--btn:#2b3346;--btn-border:#3e4863;--btn-hover:#33405a;
+      --danger:#3a1f25;--danger-b:#6c2b37;--card-52:#2a3446;--border-52:#4a6183;--card-22:#342c3a;--border-22:#73507f;
+      --pill-shift-bg:#3b3317;--pill-shift-text:#f7e4a2;--pill-time-bg:#442a24;--pill-time-text:#ffd9cd;
+      --chip-bg:#222a3b;--chip-border:#51608a;--chip-hover:#2c3650;--card-shadow:0 6px 18px rgba(0,0,0,.25);--card-radius:14px}
+    [data-theme="light"]{
+      --bg:#f5f7fb;--panel:#ffffff;--card:#ffffff;--text:#0f1625;--muted:#5b6678;--accent:#2b5cff;
+      --ok:#2aa36b;--border:#dfe5f2;--dash:#e6ebf5;--timer:#146c2e;--btn:#eef2fb;--btn-border:#d6def0;--btn-hover:#e6ecfa;
+      --danger:#fdecef;--danger-b:#f5b3c1;--card-52:#f3f7ff;--border-52:#c5d6ff;--card-22:#fbf1ff;--border-22:#e6c8f0;
+      --pill-shift-bg:#fff6cf;--pill-shift-text:#7a6518;--pill-time-bg:#ffe7e1;--pill-time-text:#7a3a2d;
+      --chip-bg:#f1f5ff;--chip-border:#c7d4ff;--chip-hover:#e7eeff;--card-shadow:0 4px 14px rgba(0,0,0,.06)}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(21,25,34,.95),rgba(21,25,34,.6));backdrop-filter:blur(6px)}
+    [data-theme="light"] .topbar{background:linear-gradient(180deg,rgba(245,247,251,.9),rgba(245,247,251,.6))}
+    header{display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
+    button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
+    button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
+    .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
 
-  :root{
-    --bg:#151922;--panel:#1d2330;--card:#262f40;--text:#e9edf4;--muted:#a2adbb;--accent:#7aa2ff;
-    --ok:#33d17a;--border:#414a60;--dash:#343c52;--timer:#b6f0b6;--btn:#2b3346;--btn-border:#3e4863;--btn-hover:#33405a;
-    --danger:#3a1f25;--danger-b:#6c2b37;--card-52:#2a3446;--border-52:#4a6183;--card-22:#342c3a;--border-22:#73507f;
-    --pill-shift-bg:#3b3317;--pill-shift-text:#f7e4a2;--pill-time-bg:#442a24;--pill-time-text:#ffd9cd;
-    --chip-bg:#222a3b;--chip-border:#51608a;--chip-hover:#2c3650;--card-shadow:0 6px 18px rgba(0,0,0,.25);--card-radius:14px}
-  [data-theme="light"]{
-    --bg:#f5f7fb;--panel:#ffffff;--card:#ffffff;--text:#0f1625;--muted:#5b6678;--accent:#2b5cff;
-    --ok:#2aa36b;--border:#dfe5f2;--dash:#e6ebf5;--timer:#146c2e;--btn:#eef2fb;--btn-border:#d6def0;--btn-hover:#e6ecfa;
-    --danger:#fdecef;--danger-b:#f5b3c1;--card-52:#f3f7ff;--border-52:#c5d6ff;--card-22:#fbf1ff;--border-22:#e6c8f0;
-    --pill-shift-bg:#fff6cf;--pill-shift-text:#7a6518;--pill-time-bg:#ffe7e1;--pill-time-text:#7a3a2d;
-    --chip-bg:#f1f5ff;--chip-border:#c7d4ff;--chip-hover:#e7eeff;--card-shadow:0 4px 14px rgba(0,0,0,.06)}
-  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
-  .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(21,25,34,.95),rgba(21,25,34,.6));backdrop-filter:blur(6px)}
-  [data-theme="light"] .topbar{background:linear-gradient(180deg,rgba(245,247,251,.9),rgba(245,247,251,.6))}
-  header{display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
-  button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
-  button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
-  .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
+    .board{
+      display:flex;gap:16px;padding:10px 16px 16px;
+      overflow:auto;cursor:default;
+      max-height: calc(100vh - 160px);
+    }
+    .board.grabbing{cursor:grabbing}
+    .col{min-width:280px;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:10px;display:flex;flex-direction:column}
+    .drop{flex:1;min-height:520px;padding:6px;border-radius:12px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--card-radius);padding:10px;margin:8px;cursor:grab;box-shadow:var(--card-shadow)}
+    .card.dragging{opacity:.65;transform:scale(.98)}.card.disabled{cursor:not-allowed;opacity:.85}
+    .card.shift-52{background:var(--card-52);border-color:var(--border-52)}.card.shift-22{background:var(--card-22);border-color:var(--border-22)}
+    .img-hero{margin:-10px -10px 8px}.img-hero img{width:100%;display:block;border-radius:var(--card-radius) var(--card-radius) 0 0;border:0}
+    .name{font-weight:700;display:flex;align-items:center;gap:10px}.meta{color:var(--muted);font-size:12px;margin-top:4px}
+    .timer{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--timer)}
+    .pills{display:flex;align-items:center;gap:8px;margin-top:8px}.pill{display:inline-flex;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px}
+    .pill.shift{background:var(--pill-shift-bg);color:var(--pill-shift-text)}.pill.time{background:var(--pill-time-bg);color:var(--pill-time-text)}
+    .pill-upload{background:var(--btn);border:1px solid var(--btn-border);color:var(--muted);border-radius:999px;padding:4px 8px}
+    .sum{margin-top:8px;font-size:12px;color:var(--muted)} .sum td{padding:2px 0}.sum td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+    .footer{padding:8px 16px;color:var(--muted);font-size:12px}.hidden{display:none}
 
-  .board{
-    display:flex;gap:16px;padding:10px 16px 16px;
-    overflow:auto;cursor:default;
-    max-height: calc(100vh - 160px);
-  }
-  .board.grabbing{cursor:grabbing}
-  .col{min-width:280px;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:10px;display:flex;flex-direction:column}
-  .drop{flex:1;min-height:520px;padding:6px;border-radius:12px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--card-radius);padding:10px;margin:8px;cursor:grab;box-shadow:var(--card-shadow)}
-  .card.dragging{opacity:.65;transform:scale(.98)}.card.disabled{cursor:not-allowed;opacity:.85}
-  .card.shift-52{background:var(--card-52);border-color:var(--border-52)}.card.shift-22{background:var(--card-22);border-color:var(--border-22)}
-  .img-hero{margin:-10px -10px 8px}.img-hero img{width:100%;display:block;border-radius:var(--card-radius) var(--card-radius) 0 0;border:0}
-  .name{font-weight:700;display:flex;align-items:center;gap:10px}.meta{color:var(--muted);font-size:12px;margin-top:4px}
-  .timer{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--timer)}
-  .pills{display:flex;align-items:center;gap:8px;margin-top:8px}.pill{display:inline-flex;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px}
-  .pill.shift{background:var(--pill-shift-bg);color:var(--pill-shift-text)}.pill.time{background:var(--pill-time-bg);color:var(--pill-time-text)}
-  .pill-upload{background:var(--btn);border:1px solid var(--btn-border);color:var(--muted);border-radius:999px;padding:4px 8px}
-  .sum{margin-top:8px;font-size:12px;color:var(--muted)} .sum td{padding:2px 0}.sum td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-  .footer{padding:8px 16px;color:var(--muted);font-size:12px}.hidden{display:none}
-</style>
+    /* === Прогноз (видимые стили) === */
+    .k-forecast-btn{background:#7aa2ff;color:#0b1324;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+    .k-forecast-modal{position:fixed;inset:0;display:none;z-index:9999}
+    .k-forecast-modal[aria-hidden="false"]{display:block}
+    .k-forecast-backdrop{position:absolute;inset:0;background:rgba(7,10,18,.55)}
+    .k-forecast-panel{position:relative;max-width:880px;margin:6vh auto;background:#121829;color:#e8eef9;border:1px solid #2a3550;border-radius:16px;box-shadow:0 16px 56px rgba(0,0,0,.4);overflow:hidden}
+    .k-forecast-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #2a3550}
+    .k-forecast-close{background:transparent;color:#9fb2d1;border:0;font-size:24px;cursor:pointer;line-height:1}
+    .k-forecast-body{padding:16px}
+    .kf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+    .kf-card{background:#0f1420;border:1px solid #22304e;border-radius:12px;padding:12px;min-height:92px;display:flex;flex-direction:column;gap:8px}
+    .kf-title{font-size:12px;color:#9fb2d1}
+    .kf-val{font-size:26px;font-weight:800}
+    .kf-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#9fb2d1}
+    .kf-ok  .kf-val{color:#28d17a}
+    .kf-warn .kf-val{color:#ffb020}
+    .kf-bad .kf-val{color:#ff6b6b}
+    .kf-mute .kf-val{color:#9fb2d1}
+    .kf-row{display:flex;align-items:center;justify-content:space-between}
+  </style>
 </head>
-< data-theme="dark">
+<body data-theme="dark">
 
 <!-- LOGIN -->
 <div id="login">
@@ -89,27 +92,13 @@
     <div>Вы: <span id="who">…</span> <span class="badge" id="roleBadge">Оператор</span></div>
     <div class="spacer"></div>
     <button id="btnTheme" class="btn-chip" title="Переключить тему">Тема: тёмная</button>
-     <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
+    <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
     <button id="btnReports" class="btn-chip hidden">Отчёты</button>
     <button id="btnLogout" class="btn-chip">Выйти</button>
   </header>
   <div id="summary" class="summarybar hidden"></div>
 </div>
 
-  <button id="k-forecast-btn" class="k-forecast-btn">Прогноз</button>
-
-<div id="k-forecast-modal" class="k-forecast-modal" aria-hidden="true">
-  <div class="k-forecast-backdrop" data-close></div>
-  <div class="k-forecast-panel" role="dialog" aria-modal="true" aria-labelledby="k-forecast-title">
-    <div class="k-forecast-head">
-      <h3 id="k-forecast-title">Прогноз — Итог месяца</h3>
-      <button class="k-forecast-close" title="Закрыть" data-close>&times;</button>
-    </div>
-    <div id="k-forecast-body" class="k-forecast-body"></div>
-  </div>
-</div>
-
-  
 <!-- BOARD -->
 <div id="appBoard" class="board hidden"></div>
 <div id="appFooter" class="footer hidden">Перетаскивайте карточки между колонками. Панорамирование: зажмите ЛКМ в пустой области и тяните.</div>
@@ -141,10 +130,21 @@
   </div>
 </div>
 
-<script>
-// Разрешаем работу везде
-window.__blocked = false;
+<!-- === Прогноз: кнопка и модалка (покажем только после логина) === -->
+<button id="k-forecast-btn" class="k-forecast-btn hidden">Прогноз</button>
 
+<div id="k-forecast-modal" class="k-forecast-modal" aria-hidden="true">
+  <div class="k-forecast-backdrop" data-close></div>
+  <div class="k-forecast-panel" role="dialog" aria-modal="true" aria-labelledby="k-forecast-title">
+    <div class="k-forecast-head">
+      <h3 id="k-forecast-title">Прогноз — Итог месяца</h3>
+      <button class="k-forecast-close" title="Закрыть" data-close>&times;</button>
+    </div>
+    <div id="k-forecast-body" class="k-forecast-body"></div>
+  </div>
+</div>
+
+<script>
 /* ====== THEME ====== */
 function applyTheme(theme){
   document.body.setAttribute('data-theme', theme);
@@ -178,6 +178,8 @@ function applySession(sess){
   const isAdmin = sess?.role==='admin';
   document.getElementById('btnNewDay').classList.toggle('hidden', !isAdmin);
   document.getElementById('btnReports').classList.toggle('hidden', !isAdmin);
+  // показать кнопку «Прогноз» только после входа
+  document.getElementById('k-forecast-btn').classList.remove('hidden');
 }
 async function restoreSession(){
   const token = localStorage.getItem('token');
@@ -198,7 +200,10 @@ document.getElementById('btnDoLogin').onclick = async ()=>{
   }catch(e){ alert('Код неверный'); }
 };
 document.getElementById('btnLogout').onclick = ()=>{
-  localStorage.removeItem('token'); location.reload();
+  localStorage.removeItem('token');
+  // скрыть кнопку при выходе
+  document.getElementById('k-forecast-btn').classList.add('hidden');
+  location.reload();
 };
 
 // ============ Load/render ============
@@ -253,7 +258,7 @@ function renderSummary(byStatus){
       if (!state.session) return;
       const myId = (state.session.operatorId||'').trim(); if (!myId) return;
       const me = (state.cards||[]).find(x=>String(x.id)===String(myId));
-      if (me && me.status === s) return; // не дёргаем бэк, если тот же статус
+      if (me && me.status === s) return;
       await move(myId, s);
     };
     summary.appendChild(chip);
@@ -337,7 +342,7 @@ function enableDrop(zone){
     const id = (e.dataTransfer.getData('text/plain')||'').trim(); if(!id) return;
     const to = zone.dataset.status;
     const card = (state.cards||[]).find(x=>String(x.id)===String(id));
-    if (card && card.status === to) return; // не сбрасываем таймеры
+    if (card && card.status === to) return;
     await move(id,to);
   });
 }
@@ -438,153 +443,6 @@ function renderStartLine(el){
   span.textContent = same ? ('Начал смену в '+hhmm) : ('Начал смену '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+' в '+hhmm);
 }
 
-/* ============ AutoScroll while dragging (чувствительнее) ============ */
-let __asRAF = 0, __asActive = false, __mx = 0, __my = 0;
-const __EDGE = 160;
-const __MAXSPEED = 64;
-function __asUpdateMouse(e){ __mx = e.clientX; __my = e.clientY; if (!__asActive) __asStart(); }
-function __asStart(){
-  __asActive = true;
-  const loop = ()=>{
-    __asRAF = requestAnimationFrame(loop);
-    const vw = window.innerWidth, vh = window.innerHeight;
-    let dx = 0, dy = 0;
-    if (__mx < __EDGE) dx = -((__EDGE - __mx)/__EDGE) * __MAXSPEED;
-    else if (vw - __mx < __EDGE) dx =  ((__EDGE - (vw - __mx))/__EDGE) * __MAXSPEED;
-    if (__my < __EDGE) dy = -((__EDGE - __my)/__EDGE) * __MAXSPEED;
-    else if (vh - __my < __EDGE) dy =  ((__EDGE - (vh - __my))/__EDGE) * __MAXSPEED;
-    const board = document.querySelector('.board');
-    if (board && dx) board.scrollLeft += dx;
-    if (dy) {
-      if (board && board.scrollHeight > board.clientHeight) board.scrollTop += dy;
-      else window.scrollBy(0, dy);
-    }
-  };
-  loop();
-}
-function __asStop(){ __asActive = false; if (__asRAF) cancelAnimationFrame(__asRAF); __asRAF = 0; }
-document.addEventListener('dragover', (e)=>{ __asUpdateMouse(e); });
-document.addEventListener('drop', ()=> __asStop());
-document.addEventListener('dragleave', (e)=>{
-  if (e.clientX<=0 || e.clientY<=0 || e.clientX>=window.innerWidth || e.clientY>=window.innerHeight) __asStop();
-});
-
-/* ============ PANNING: перемещение полотна мышью (X+Y) ============ */
-(function enablePanning(){
-  const board = document.getElementById('appBoard');
-  let isDown = false, startX = 0, startY = 0, sl = 0, st = 0;
-
-  board.addEventListener('mousedown', (e)=>{
-    if (e.button !== 0) return;
-    if (e.target.closest('.card') || /(input|button|select|textarea)/i.test(e.target.tagName)) return;
-    isDown = true;
-    board.classList.add('grabbing');
-    startX = e.clientX; startY = e.clientY;
-    sl = board.scrollLeft; st = board.scrollTop;
-    e.preventDefault();
-  });
-  window.addEventListener('mousemove', (e)=>{
-    if (!isDown) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    board.scrollLeft = sl - dx;
-    if (board.scrollHeight > board.clientHeight) board.scrollTop  = st - dy;
-    else {
-      window.scrollTo({ top: window.scrollY - dy, left: window.scrollX });
-      startY = e.clientY; st = 0;
-    }
-  });
-  const stopPan = ()=>{
-    if (!isDown) return;
-    isDown = false;
-    board.classList.remove('grabbing');
-  };
-  window.addEventListener('mouseup', stopPan);
-  document.addEventListener('mouseleave', stopPan);
-})();
-
-// ============ Reports ============
-function fillReportSelectors(cards){
-  const opSel=document.getElementById('repOperator'), tlSel=document.getElementById('repTeamlead');
-  const ops = Array.from(new Set(cards.map(c=>JSON.stringify({id:c.id,name:c.name})))) .map(s=>JSON.parse(s)) .sort((a,b)=>a.name.localeCompare(b.name,'ru'));
-  const tls = Array.from(new Set(cards.map(c=>c.teamlead).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'ru'));
-  opSel.innerHTML='<option value=\"\">Все</option>'+ops.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
-  tlSel.innerHTML='<option value=\"\">Все</option>'+tls.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
-  const today = new Date(); const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
-  if(!document.getElementById('repFrom').value) document.getElementById('repFrom').value = iso(today);
-  if(!document.getElementById('repTo').value)   document.getElementById('repTo').value   = iso(today);
-}
-document.getElementById('btnBuildRep').onclick = async ()=>{
-  const from = document.getElementById('repFrom').value;
-  const to   = document.getElementById('repTo').value;
-  const op   = document.getElementById('repOperator').value || '';
-  const tl   = document.getElementById('repTeamlead').value || '';
-  const q = new URLSearchParams({ from, to, operatorId: op, teamlead: tl });
-  const statusEl = document.getElementById('repStatus');
-  statusEl.textContent='Считаю...';
-  try{
-    const data = await api(`/api/report?${q.toString()}`);
-    const rows = data?.rows || [];
-    fillRepTable(rows);
-    statusEl.textContent = rows.length ? `Строк: ${rows.length}` : 'Нет данных за период';
-  }catch(e){
-    console.error('Report API error:', e);
-    statusEl.textContent = 'Ошибка при формировании отчёта. Подробности — в консоли.';
-  }
-};
-function secToHMS(s){ s=Math.max(0,Math.floor(s)); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60; const pad=n=>(n<10?'0':'')+n; return (h?pad(h)+':':'')+pad(m)+':'+pad(ss); }
-function fillRepTable(rows){
-  const tb=document.querySelector('#repTable tbody'); tb.innerHTML='';
-  rows.forEach(r=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML = `<td style="padding:6px;border-bottom:1px solid var(--border)">${esc(r.name||r.operatorId)}</td>
-      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(r.teamlead||'')}</td>
-      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalLine||0))}</td>
-      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalBreak||0))}</td>
-      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalWait||0))}</td>
-      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalLunch||0))}</td>`;
-    tb.appendChild(tr);
-  });
-}
-
-// ============ Buttons & Page switch ============
-document.getElementById('btnReports').onclick = ()=> switchPage(state.page==='reports'?'board':'reports');
-document.getElementById('btnNewDay').onclick = async ()=>{
-  if (!state.session) return;
-  if (!confirm('Начать новый день? Всех переведёт в «Выходной», обнулит итоги и старт смены.')) return;
-  const actor = state.session.displayName || state.session.operatorId;
-  try{ await api('/api/newDay',{method:'POST',body:JSON.stringify({token:state.session.token, actor})}); await fullReload(); }catch(e){ alert('Нет прав'); }
-};
-function switchPage(page){
-  state.page=page; const isRep=page==='reports';
-  document.getElementById('summary').classList.toggle('hidden',isRep);
-  document.getElementById('appBoard').classList.toggle('hidden',isRep);
-  document.getElementById('appFooter').classList.toggle('hidden',isRep);
-  document.getElementById('reports').classList.toggle('hidden',!isRep);
-  if (isRep) stopPolling(); else { fullReload(); ensureBoardPolling(); }
-}
-
-// ============ Visibility pause ============
-document.addEventListener('visibilitychange', ()=>{
-  if (document.hidden) stopPolling();
-  else if (state.page === 'board') { fullReload(); ensureBoardPolling(); }
-});
-
-// ============ Bootstrap ============
-(async function bootstrap(){
-  applyTheme(localStorage.getItem('theme') || 'dark');
-  const sess = await restoreSession();
-  if (sess){
-    applySession(sess);
-    document.getElementById('login').style.display='none';
-    document.getElementById('topbar').classList.remove('hidden');
-    await fullReload();
-    ensureBoardPolling();
-  } else {
-    document.getElementById('login').style.display='flex';
-  }
-})();
-
 /* ======== Автообновление только на доске (10 сек) ======== */
 let __pollId = 0;
 function ensureBoardPolling(){
@@ -594,9 +452,28 @@ function ensureBoardPolling(){
 function stopPolling(){
   if (__pollId){ clearInterval(__pollId); __pollId = 0; }
 }
-  
-const APP_URL = 'AKfycbwSkBCK7eFWXkWJpAf-UBnAhh1yiFOpknxB0kdLddnCITH7vyDPAwqPQdlCDKLsSd0Y/exec';
-// Код берём из localStorage (ты это подтверждал)
+
+/* ============ Bootstrap ============ */
+(async function bootstrap(){
+  applyTheme(localStorage.getItem('theme') || 'dark');
+  const sess = await restoreSession();
+  if (sess){
+    applySession(sess);
+    document.getElementById('login').style.display='none';
+    document.getElementById('topbar').classList.remove('hidden');
+    // показать кнопку «Прогноз» после восстановления сессии
+    document.getElementById('k-forecast-btn').classList.remove('hidden');
+    await fullReload();
+    ensureBoardPolling();
+  } else {
+    document.getElementById('login').style.display='flex';
+  }
+})();
+
+/* ===================== ПРОГНОЗ: логика ===================== */
+const APP_URL = 'https://script.google.com/macros/s/AKfycbwSkBCK7eFWXkWJpAf-UBnAhh1yiFOpknxB0kdLddnCITH7vyDPAwqPQdlCDKLsSd0Y/exec'; // <-- замени на свой /exec
+
+// Код храним в localStorage (как ты и показывал)
 function getUserCode(){ return localStorage.getItem('kaiten_code') || null; }
 
 function kModal(open){
@@ -669,7 +546,7 @@ async function showForecast(){
     body.innerHTML = `<div class="kf-card kf-bad"><div class="kf-title">Ошибка</div><div class="kf-val">${err.message}</div></div>`;
   }
 }
-  
 </script>
 </body>
 </html>
+
