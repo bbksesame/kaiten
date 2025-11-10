@@ -629,13 +629,8 @@ document.addEventListener('keydown', e => { if(e.key==='Escape') kModal(false); 
 function toMMSS(total){ const n=Number(total); if(!isFinite(n)) return ''; const m=Math.floor(n/60),s=n%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
 function norm(v){ return (v===null||v===undefined||String(v).trim()==='') ? '—' : String(v); }
 function pickStatus(key, raw){
-  if (!raw || raw==='—') return 'kf-mute';
-  const val = parseFloat(String(raw).replace(',','.'));
-  if (key==='Csat'){ if (val>=4.8) return 'kf-ok'; if (val>=4.5) return 'kf-warn'; return 'kf-bad'; }
-  if (key==='RT' || key==='ART'){
-    const sec = Number(raw); if (!isFinite(sec)) return 'kf-mute';
-    if (sec<=60) return 'kf-ok'; if (sec<=120) return 'kf-warn'; return 'kf-bad';
-  }
+  return 'kf-mute';
+}
   return 'kf-mute';
 }
 function card(title, value, hint){
