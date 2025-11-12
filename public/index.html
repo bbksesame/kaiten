@@ -1,52 +1,73 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  +  <style>#btnNewDay{display:none !important;}</style>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Учёт перерывов (канбан)</title>
 
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Учёт перерывов (канбан)</title>
-<style>
-  :root{
-    --bg:#151922;--panel:#1d2330;--card:#262f40;--text:#e9edf4;--muted:#a2adbb;--accent:#7aa2ff;
-    --ok:#33d17a;--border:#414a60;--dash:#343c52;--timer:#b6f0b6;--btn:#2b3346;--btn-border:#3e4863;--btn-hover:#33405a;
-    --danger:#3a1f25;--danger-b:#6c2b37;--card-52:#2a3446;--border-52:#4a6183;--card-22:#342c3a;--border-22:#73507f;
-    --pill-shift-bg:#3b3317;--pill-shift-text:#f7e4a2;--pill-time-bg:#442a24;--pill-time-text:#ffd9cd;
-    --chip-bg:#222a3b;--chip-border:#51608a;--chip-hover:#2c3650;--card-shadow:0 6px 18px rgba(0,0,0,.25);--card-radius:14px}
-  [data-theme="light"]{
-    --bg:#f5f7fb;--panel:#ffffff;--card:#ffffff;--text:#0f1625;--muted:#5b6678;--accent:#2b5cff;
-    --ok:#2aa36b;--border:#dfe5f2;--dash:#e6ebf5;--timer:#146c2e;--btn:#eef2fb;--btn-border:#d6def0;--btn-hover:#e6ecfa;
-    --danger:#fdecef;--danger-b:#f5b3c1;--card-52:#f3f7ff;--border-52:#c5d6ff;--card-22:#fbf1ff;--border-22:#e6c8f0;
-    --pill-shift-bg:#fff6cf;--pill-shift-text:#7a6518;--pill-time-bg:#ffe7e1;--pill-time-text:#7a3a2d;
-    --chip-bg:#f1f5ff;--chip-border:#c7d4ff;--chip-hover:#e7eeff;--card-shadow:0 4px 14px rgba(0,0,0,.06)}
-  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
-  .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(21,25,34,.95),rgba(21,25,34,.6));backdrop-filter:blur(6px)}
-  [data-theme="light"] .topbar{background:linear-gradient(180deg,rgba(245,247,251,.9),rgba(245,247,251,.6))}
-  header{display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
-  button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
-  button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
-  .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
+  <!-- скрыть "Новый день" (как у тебя было) -->
+  <style>#btnNewDay{display:none !important;}</style>
 
-  .board{
-    display:flex;gap:16px;padding:10px 16px 16px;
-    overflow:auto;cursor:default;
-    max-height: calc(100vh - 160px);
-  }
-  .board.grabbing{cursor:grabbing}
-  .col{min-width:280px;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:10px;display:flex;flex-direction:column}
-  .drop{flex:1;min-height:520px;padding:6px;border-radius:12px}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--card-radius);padding:10px;margin:8px;cursor:grab;box-shadow:var(--card-shadow)}
-  .card.dragging{opacity:.65;transform:scale(.98)}.card.disabled{cursor:not-allowed;opacity:.85}
-  .card.shift-52{background:var(--card-52);border-color:var(--border-52)}.card.shift-22{background:var(--card-22);border-color:var(--border-22)}
-  .img-hero{margin:-10px -10px 8px}.img-hero img{width:100%;display:block;border-radius:var(--card-radius) var(--card-radius) 0 0;border:0}
-  .name{font-weight:700;display:flex;align-items:center;gap:10px}.meta{color:var(--muted);font-size:12px;margin-top:4px}
-  .timer{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--timer)}
-  .pills{display:flex;align-items:center;gap:8px;margin-top:8px}.pill{display:inline-flex;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px}
-  .pill.shift{background:var(--pill-shift-bg);color:var(--pill-shift-text)}.pill.time{background:var(--pill-time-bg);color:var(--pill-time-text)}
-  .pill-upload{background:var(--btn);border:1px solid var(--btn-border);color:var(--muted);border-radius:999px;padding:4px 8px}
-  .sum{margin-top:8px;font-size:12px;color:var(--muted)} .sum td{padding:2px 0}.sum td:last-child{text-align:right;font-variant-numeric:tabular-nums}
-  .footer{padding:8px 16px;color:var(--muted);font-size:12px}.hidden{display:none}
-</style>
+  <style>
+    :root{
+      --bg:#151922;--panel:#1d2330;--card:#262f40;--text:#e9edf4;--muted:#a2adbb;--accent:#7aa2ff;
+      --ok:#33d17a;--border:#414a60;--dash:#343c52;--timer:#b6f0b6;--btn:#2b3346;--btn-border:#3e4863;--btn-hover:#33405a;
+      --danger:#3a1f25;--danger-b:#6c2b37;--card-52:#2a3446;--border-52:#4a6183;--card-22:#342c3a;--border-22:#73507f;
+      --pill-shift-bg:#3b3317;--pill-shift-text:#f7e4a2;--pill-time-bg:#442a24;--pill-time-text:#ffd9cd;
+      --chip-bg:#222a3b;--chip-border:#51608a;--chip-hover:#2c3650;--card-shadow:0 6px 18px rgba(0,0,0,.25);--card-radius:14px}
+    [data-theme="light"]{
+      --bg:#f5f7fb;--panel:#ffffff;--card:#ffffff;--text:#0f1625;--muted:#5b6678;--accent:#2b5cff;
+      --ok:#2aa36b;--border:#dfe5f2;--dash:#e6ebf5;--timer:#146c2e;--btn:#eef2fb;--btn-border:#d6def0;--btn-hover:#e6ecfa;
+      --danger:#fdecef;--danger-b:#f5b3c1;--card-52:#f3f7ff;--border-52:#c5d6ff;--card-22:#fbf1ff;--border-22:#e6c8f0;
+      --pill-shift-bg:#fff6cf;--pill-shift-text:#7a6518;--pill-time-bg:#ffe7e1;--pill-time-text:#7a3a2d;
+      --chip-bg:#f1f5ff;--chip-border:#c7d4ff;--chip-hover:#e7eeff;--card-shadow:0 4px 14px rgba(0,0,0,.06)}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(21,25,34,.95),rgba(21,25,34,.6));backdrop-filter:blur(6px)}
+    [data-theme="light"] .topbar{background:linear-gradient(180deg,rgba(245,247,251,.9),rgba(245,247,251,.6))}
+    header{display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
+    button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
+    button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
+    .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
+
+    .board{
+      display:flex;gap:16px;padding:10px 16px 16px;
+      overflow:auto;cursor:default;
+      max-height: calc(100vh - 160px);
+    }
+    .board.grabbing{cursor:grabbing}
+    .col{min-width:280px;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:10px;display:flex;flex-direction:column}
+    .drop{flex:1;min-height:520px;padding:6px;border-radius:12px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--card-radius);padding:10px;margin:8px;cursor:grab;box-shadow:var(--card-shadow)}
+    .card.dragging{opacity:.65;transform:scale(.98)}.card.disabled{cursor:not-allowed;opacity:.85}
+    .card.shift-52{background:var(--card-52);border-color:var(--border-52)}.card.shift-22{background:var(--card-22);border-color:var(--border-22)}
+    .img-hero{margin:-10px -10px 8px}.img-hero img{width:100%;display:block;border-radius:var(--card-radius) var(--card-radius) 0 0;border:0}
+    .name{font-weight:700;display:flex;align-items:center;gap:10px}.meta{color:var(--muted);font-size:12px;margin-top:4px}
+    .timer{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--timer)}
+    .pills{display:flex;align-items:center;gap:8px;margin-top:8px}.pill{display:inline-flex;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px}
+    .pill.shift{background:var(--pill-shift-bg);color:var(--pill-shift-text)}.pill.time{background:var(--pill-time-bg);color:var(--pill-time-text)}
+    .pill-upload{background:var(--btn);border:1px solid var(--btn-border);color:var(--muted);border-radius:999px;padding:4px 8px}
+    .sum{margin-top:8px;font-size:12px;color:var(--muted)} .sum td{padding:2px 0}.sum td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+    .footer{padding:8px 16px;color:var(--muted);font-size:12px}.hidden{display:none}
+
+    /* ===== Прогноз — модалка ===== */
+    .k-forecast-modal{position:fixed;inset:0;display:none;z-index:9999}
+    .k-forecast-modal[aria-hidden="false"]{display:block}
+    .k-forecast-backdrop{position:absolute;inset:0;background:rgba(7,10,18,.55)}
+    .k-forecast-panel{position:relative;max-width:880px;margin:6vh auto;background:#121829;color:#e8eef9;border:1px solid #2a3550;border-radius:16px;box-shadow:0 16px 56px rgba(0,0,0,.4);overflow:hidden}
+    .k-forecast-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #2a3550}
+    .k-forecast-close{background:transparent;color:#9fb2d1;border:0;font-size:24px;cursor:pointer;line-height:1}
+    .k-forecast-body{padding:16px}
+    .kf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+    .kf-card{background:#0f1420;border:1px solid #22304e;border-radius:12px;padding:12px;min-height:92px;display:flex;flex-direction:column;gap:8px}
+    .kf-title{font-size:12px;color:#9fb2d1}
+    .kf-val{font-size:26px;font-weight:800}
+    .kf-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#9fb2d1}
+    .kf-ok  .kf-val{color:#28d17a}
+    .kf-warn .kf-val{color:#ffb020}
+    .kf-bad .kf-val{color:#ff6b6b}
+    .kf-mute .kf-val{color:#9fb2d1}
+    .kf-row{display:flex;align-items:center;justify-content:space-between}
+  </style>
 </head>
 <body data-theme="dark">
 
@@ -69,8 +90,12 @@
     <div>Вы: <span id="who">…</span> <span class="badge" id="roleBadge">Оператор</span></div>
     <div class="spacer"></div>
     <button id="btnTheme" class="btn-chip" title="Переключить тему">Тема: тёмная</button>
-     <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
+    <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
     <button id="btnReports" class="btn-chip hidden">Отчёты</button>
+
+    <!-- Кнопка ПРОГНОЗ в правом верхнем углу -->
+    <button id="k-forecast-btn" class="btn-chip">Прогноз</button>
+
     <button id="btnLogout" class="btn-chip">Выйти</button>
   </header>
   <div id="summary" class="summarybar hidden"></div>
@@ -107,6 +132,19 @@
   </div>
 </div>
 
+<!-- МОДАЛКА ПРОГНОЗ -->
+<div id="k-forecast-modal" class="k-forecast-modal" aria-hidden="true">
+  <div class="k-forecast-backdrop" data-close></div>
+  <div class="k-forecast-panel" role="dialog" aria-modal="true" aria-labelledby="k-forecast-title">
+    <div class="k-forecast-head">
+      <h3 id="k-forecast-title">Прогноз — Итог месяца</h3>
+      <button class="k-forecast-close" title="Закрыть" data-close>&times;</button>
+    </div>
+    <div id="k-forecast-body" class="k-forecast-body"></div>
+  </div>
+</div>
+
+  
 <script>
 // Разрешаем работу везде
 window.__blocked = false;
@@ -152,11 +190,14 @@ async function restoreSession(){
 }
 
 // ============ Login ============
+// сохраняем 6-значный код в localStorage ('kaiten_code') — нужен модалке «Прогноз»
 document.getElementById('btnDoLogin').onclick = async ()=>{
   const code = (document.getElementById('codeInput').value||'').trim();
   try{
     const sess = await api('/api/login',{method:'POST',body:JSON.stringify({code})});
     localStorage.setItem('token', sess.token);
+    localStorage.setItem('kaiten_code', code);
+
     applySession(sess);
     document.getElementById('login').style.display='none';
     document.getElementById('topbar').classList.remove('hidden');
@@ -164,7 +205,10 @@ document.getElementById('btnDoLogin').onclick = async ()=>{
   }catch(e){ alert('Код неверный'); }
 };
 document.getElementById('btnLogout').onclick = ()=>{
-  localStorage.removeItem('token'); location.reload();
+  localStorage.removeItem('token');
+  // при желании можно чистить и kaiten_code:
+  // localStorage.removeItem('kaiten_code');
+  location.reload();
 };
 
 // ============ Load/render ============
@@ -559,6 +603,93 @@ function ensureBoardPolling(){
 }
 function stopPolling(){
   if (__pollId){ clearInterval(__pollId); __pollId = 0; }
+}
+</script>
+
+<!-- ЛОГИКА МОДАЛКИ "ПРОГНОЗ" -->
+<script>
+/** ССЫЛКА НА Apps Script (web app, /exec) — замени на свою при необходимости */
+const APP_URL = 'https://script.google.com/macros/s/AKfycbwSkBCK7eFWXkWJpAf-UBnAhh1yiFOpknxB0kdLddnCITH7vyDPAwqPQdlCDKLsSd0Y/exec';
+
+/** Читаем код из localStorage (его сохраняем при логине) */
+function getUserCode(){ return localStorage.getItem('kaiten_code') || null; }
+
+/** Открыть/закрыть модалку */
+function kModal(open){
+  document.getElementById('k-forecast-modal').setAttribute('aria-hidden', open ? 'false' : 'true');
+}
+document.addEventListener('click', (e)=>{
+  const t=e.target;
+  if (t.matches('#k-forecast-btn')) showForecast();
+  if (t.closest('[data-close]')) kModal(false);
+});
+document.addEventListener('keydown', e => { if(e.key==='Escape') kModal(false); });
+
+/** Хелперы рендера */
+function toMMSS(total){ const n=Number(total); if(!isFinite(n)) return ''; const m=Math.floor(n/60),s=n%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+function norm(v){ return (v===null||v===undefined||String(v).trim()==='') ? '—' : String(v); }
+function pickStatus(key, raw){
+  return 'kf-mute';
+}
+ 
+function card(title, value, hint){
+  const cls = pickStatus(title, value);
+  let shown = value;
+  if ((title==='RT'||title==='ART') && value && value!=='—') shown = toMMSS(Number(value));
+  return `<div class="kf-card ${cls}"><div class="kf-title">${title}${hint?` <span class="kf-chip">${hint}</span>`:''}</div><div class="kf-val">${norm(shown)}</div></div>`;
+}
+/** Локализованный вывод времени обновления */
+function fmtLocal(iso){
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('ru-RU', { hour12: false });
+}
+
+/** Основная логика */
+async function showForecast(){
+  const code = getUserCode();
+  const body = document.getElementById('k-forecast-body');
+  kModal(true);
+
+  if (!code){
+    body.innerHTML = `<div class="kf-card kf-bad"><div class="kf-title">Ошибка</div><div class="kf-val">Авторизуйтесь в системе</div></div>`;
+    return;
+  }
+  body.innerHTML = `<div class="kf-card kf-mute"><div class="kf-title">Загрузка</div><div class="kf-val">…</div></div>`;
+
+  try{
+    const u = new URL(APP_URL);
+    u.searchParams.set('api','personal');
+    u.searchParams.set('code', code);
+
+    const res = await fetch(u.toString(), {method:'GET', credentials:'omit'});
+    const js  = await res.json();
+    if (!js.ok) throw new Error(js.error || 'API error');
+
+    const m = js.metrics || {};
+    const tiles = [
+      card('Csat',            m['Csat'], 'ср. оценка'),
+      card('Capacity',        m['Capacity'], 'ед.'),
+      card('Закрыто чатов',   m['Закрыто чатов'], 'шт.'),
+      card('RT',              m['RT'], 'мм:сс'),
+      card('ART',             m['ART'], 'мм:сс'),
+      card('Звонки',          m['Звонки'], 'шт.')
+    ];
+
+    body.innerHTML = `
+      <div class="kf-row" style="margin-bottom:10px">
+        <div class="kf-chip">Оператор</div>
+        <div style="font-weight:700">${js.operator}</div>
+      </div>
+      <div class="kf-grid">${tiles.join('')}</div>
+      <div class="kf-row" style="margin-top:12px">
+        <div class="kf-chip">Дата обновления</div>
+        <div>${fmtLocal(js.updatedAt)}</div>
+      </div>
+    `;
+  }catch(err){
+    body.innerHTML = `<div class="kf-card kf-bad"><div class="kf-title">Ошибка</div><div class="kf-val">${err.message}</div></div>`;
+  }
 }
 </script>
 </body>
