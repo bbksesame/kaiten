@@ -67,6 +67,61 @@
     .kf-bad .kf-val{color:#ff6b6b}
     .kf-mute .kf-val{color:#9fb2d1}
     .kf-row{display:flex;align-items:center;justify-content:space-between}
+
+    /* ===== Мини-казино в модалке прогноза ===== */
+    #slot-machine{
+      margin-top:16px;
+      padding:12px 16px;
+      border-radius:12px;
+      background:#111827;
+      border:1px solid #374151;
+      max-width:260px;
+    }
+    .slot-title{
+      font-size:14px;
+      margin-bottom:8px;
+      opacity:.85;
+    }
+    .slot-reels{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:10px;
+    }
+    .slot-reel{
+      flex:1;
+      height:52px;
+      border-radius:10px;
+      background:#020617;
+      border:1px solid #4b5563;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:28px;
+      box-shadow:0 4px 10px rgba(0,0,0,.35) inset;
+      transition:transform .15s ease-out;
+    }
+    .slot-reel.spin{transform:translateY(4px);}
+    #slot-spin-btn{
+      width:100%;
+      padding:8px 10px;
+      border-radius:10px;
+      border:none;
+      background:#7aa2ff;
+      color:#020617;
+      font-weight:600;
+      cursor:pointer;
+      font-size:14px;
+    }
+    #slot-spin-btn:disabled{
+      opacity:.6;
+      cursor:default;
+    }
+    .slot-result{
+      margin-top:6px;
+      font-size:12px;
+      opacity:.9;
+    }
   </style>
 </head>
 <body data-theme="dark">
@@ -305,7 +360,7 @@ function makeCard(c){
   el.dataset.id = cardId; el.dataset.status = c.status;
   if (c.statusSince) el.dataset.since = c.statusSince; if (c.shiftStart) el.dataset.shiftStart = c.shiftStart;
   const t = c.totals||{}; el.dataset.totalLine=t.totalLine||0; el.dataset.totalBreak=t.totalBreak||0; el.dataset.totalWait=t.totalWait||0; el.dataset.totalLunch=t.totalLunch||0;
-  const avatar = (c.images&&c.images.length)?c.images[c.images.length-1]:'';
+  const avatar = (c.images&&c.images.length)?c.images[c.images.length-1]:'';//
   el.innerHTML =
     (avatar?`<div class="img-hero"><img src="${avatar}"></div>`:'')+
     `<div class="name"><div>${esc(c.name)}</div><span class="timer"></span></div>`+
@@ -606,7 +661,7 @@ function stopPolling(){
 }
 </script>
 
-<!-- ЛОГИКА МОДАЛКИ "ПРОГНОЗ" -->
+<!-- ЛОГИКА МОДАЛКИ "ПРОГНОЗ" + КАЗИНО -->
 <script>
 /** ССЫЛКА НА Apps Script (web app, /exec) — замени на свою при необходимости */
 const APP_URL = 'https://script.google.com/macros/s/AKfycbwSkBCK7eFWXkWJpAf-UBnAhh1yiFOpknxB0kdLddnCITH7vyDPAwqPQdlCDKLsSd0Y/exec';
@@ -643,6 +698,66 @@ function fmtLocal(iso){
   if (!iso) return '—';
   const d = new Date(iso);
   return d.toLocaleString('ru-RU', { hour12: false });
+}
+
+/* ==== Мини-слот-машина (казино) ==== */
+function initSlotMachine(){
+  const root = document.getElementById('slot-machine');
+  if (!root) return;
+
+  const emojis = ['🍒','🍋','⭐','💎','🍀','🔥'];
+  const reels = [
+    root.querySelector('#slot-reel-1'),
+    root.querySelector('#slot-reel-2'),
+    root.querySelector('#slot-reel-3')
+  ];
+  const btn = root.querySelector('#slot-spin-btn');
+  const res = root.querySelector('#slot-result');
+
+  if (!btn || !reels[0] || !reels[1] || !reels[2]) return;
+
+  function randEmoji(){
+    return emojis[Math.floor(Math.random() * emojis.length)];
+  }
+
+  function spinReel(reel, delay){
+    return new Promise(resolve=>{
+      reel.classList.add('spin');
+      let ticks = 0;
+      const maxTicks = 12 + Math.floor(Math.random() * 6);
+      const timer = setInterval(()=>{
+        reel.textContent = randEmoji();
+        ticks++;
+        if (ticks >= maxTicks){
+          clearInterval(timer);
+          reel.classList.remove('spin');
+          resolve(reel.textContent);
+        }
+      }, delay);
+    });
+  }
+
+  async function spinAll(){
+    btn.disabled = true;
+    res.textContent = 'Крутим…';
+
+    const [a,b,c] = await Promise.all([
+      spinReel(reels[0],60),
+      spinReel(reels[1],70),
+      spinReel(reels[2],80)
+    ]);
+
+    if (a===b && b===c){
+      res.textContent = 'ДЖЕКПОТ! ' + a + a + a;
+    } else if (a===b || b===c || a===c){
+      res.textContent = 'Две одинаковые — тоже неплохо 😉';
+    } else {
+      res.textContent = 'В этот раз не повезло 🙃';
+    }
+    btn.disabled = false;
+  }
+
+  btn.onclick = spinAll;
 }
 
 /** Основная логика */
@@ -688,7 +803,19 @@ async function showForecast(){
         <div class="kf-chip">Дата обновления</div>
         <div>${fmtLocal(js.updatedAt)}</div>
       </div>
+      <div id="slot-machine">
+        <div class="slot-title">КайтEn казино 🎰</div>
+        <div class="slot-reels">
+          <div class="slot-reel" id="slot-reel-1">❔</div>
+          <div class="slot-reel" id="slot-reel-2">❔</div>
+          <div class="slot-reel" id="slot-reel-3">❔</div>
+        </div>
+        <button id="slot-spin-btn">Крутить</button>
+        <div class="slot-result" id="slot-result"></div>
+      </div>
     `;
+
+    initSlotMachine();
   }catch(err){
     body.innerHTML = `<div class="kf-card kf-bad"><div class="kf-title">Ошибка</div><div class="kf-val">${err.message}</div></div>`;
   }
