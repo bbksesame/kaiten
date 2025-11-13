@@ -668,14 +668,14 @@ async function showForecast(){
 
     const m = js.metrics || {};
     const tiles = [
-      card('Csat',            m['Csat'], 'ср. оценка'),
-      card('Capacity',        m['Capacity'], 'ед.'),
-      card('Закрыто чатов',   m['Закрыто чатов'], 'шт.'),
-      card('RT',              m['RT'], 'мм:сс'),
-      card('ART',             m['ART'], 'мм:сс'),
-      card('Звонки',          m['Звонки'], 'шт.'),
-      card('Баллы',           m['Баллы'], 'итог месяца'),
-      card('Место',           m['Место'], 'в рейтинге')      
+      card('Csat',            m['Csat'], 'оценка'),
+      card('Capacity',        m['Capacity'], ''),
+      card('Закрыто чатов',   m['Закрыто чатов'], ''),
+      card('RT',              m['RT'], 'сек'),
+      card('ART',             m['ART'], 'сек'),
+      card('Звонки',          m['Звонки'], 'исход + вход'),
+      card('Баллы',           m['Баллы'], 'предварительно без ОКК'),
+      card('Место',           m['Место'], 'предварительно')      
     ];
 
     body.innerHTML = `
