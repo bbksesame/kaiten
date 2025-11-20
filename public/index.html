@@ -336,41 +336,6 @@ function renderColumns(byStatus){
       enableDrop(col.querySelector('.drop')); root.appendChild(col);
     });
 
-    // Плашка-переключатель над колонкой "Перерыв"
-    const breakCol = root.querySelector('.col[data-status="Перерыв"]');
-    if (breakCol && !breakCol.querySelector('.break-toggle')) {
-      const header = breakCol.querySelector('h3');
-      const toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.className = 'break-toggle break-toggle--single';
-      toggle.dataset.mode = 'single'; // single = по одному, double = по двое
-
-      const updateBreakToggle = () => {
-        if (toggle.dataset.mode === 'single') {
-          toggle.textContent = 'Перерыв: по одному';
-          toggle.classList.add('break-toggle--single');
-          toggle.classList.remove('break-toggle--double');
-        } else {
-          toggle.textContent = 'Перерыв: по двое';
-          toggle.classList.add('break-toggle--double');
-          toggle.classList.remove('break-toggle--single');
-        }
-      };
-
-      updateBreakToggle();
-
-      toggle.addEventListener('click', () => {
-        toggle.dataset.mode = toggle.dataset.mode === 'single' ? 'double' : 'single';
-        updateBreakToggle();
-      });
-
-      // вставляем плашку над заголовком колонки "Перерыв"
-      if (header) breakCol.insertBefore(toggle, header);
-      else breakCol.insertBefore(toggle, breakCol.firstChild);
-    }
-
-    root.dataset.ready='1';
-  }
   state.statuses.forEach(s=>{
     const cards = byStatus[s]||[]; const newHash = hashColumn(cards);
     const col = root.querySelector(`.col[data-status="${s.replace(/"/g,'\\"')}"]`); if (!col) return;
