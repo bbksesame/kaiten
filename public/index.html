@@ -124,31 +124,49 @@
     }
 
     /* ===== Плашка-переключатель над "Перерыв" ===== */
-    .break-toggle{
-      margin:4px 8px 0;
-      padding:4px 10px;
-      border-radius:999px;
-      border:1px solid transparent;
-      font-size:12px;
-      font-weight:600;
-      cursor:pointer;
-      background:var(--btn);
-      color:var(--muted);
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      white-space:nowrap;
-    }
-    .break-toggle--single{
-      background:var(--danger-b);
-      border-color:var(--danger-b);
-      color:#ffd9cd;
-    }
-    .break-toggle--double{
-      background:var(--ok);
-      border-color:var(--ok);
-      color:#04120a;
-    }
+   /* Новая мягкая плашка-переключалка */
+.break-toggle{
+  margin:6px 8px 8px;
+  padding:6px 12px;
+  border-radius:12px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  border:1px solid var(--btn-border);
+  background:var(--card);
+  color:var(--text);
+  opacity:.9;
+  transition:all .18s ease;
+  box-shadow:0 2px 6px rgba(0,0,0,.15);
+}
+
+.break-toggle:hover{
+  opacity:1;
+  background:var(--btn-hover);
+}
+
+/* По одному — мягкий янтарный */
+.break-toggle--single{
+  background:#3b2f24;
+  border-color:#5a4634;
+  color:#f2d6b1;
+}
+
+/* По двое — мягкий зеленоватый */
+.break-toggle--double{
+  background:#1f3329;
+  border-color:#385f4a;
+  color:#c9f5d8;
+}
+
+/* Hover-смягчение */
+.break-toggle--single:hover{
+  background:#4b3e31;
+}
+.break-toggle--double:hover{
+  background:#2c4b3b;
+}
+
   </style>
 </head>
 <body data-theme="dark">
