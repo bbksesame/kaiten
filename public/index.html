@@ -12,395 +12,110 @@
     :root{
       --bg:#151922;--panel:#1d2330;--card:#262f40;--text:#e9edf4;--muted:#a2adbb;--accent:#7aa2ff;
       --ok:#33d17a;--border:#414a60;--dash:#343c52;--timer:#b6f0b6;--btn:#2b3346;--btn-border:#3e4863;--btn-hover:#33405a;
-      --danger:#3a1f25;--danger-b:#6c2b37;--card-52:#2a3446;--border-52:#465270;--card-22:#28303f;--border-22:#3e465a;
-      --card-night:#26293b;--border-night:#444768;--clock:#fff4c2;--scroll:#1c2331;--red:#e01b24;--yellow:#f6d32d;--green:#33d17a;
-      --chip-bg:#222838;--chip-border:#3a4257;
-    }
+      --danger:#3a1f25;--danger-b:#6c2b37;--card-52:#2a3446;--border-52:#4a6183;--card-22:#342c3a;--border-22:#73507f;
+      --pill-shift-bg:#3b3317;--pill-shift-text:#f7e4a2;--pill-time-bg:#442a24;--pill-time-text:#ffd9cd;
+      --chip-bg:#222a3b;--chip-border:#51608a;--chip-hover:#2c3650;--card-shadow:0 6px 18px rgba(0,0,0,.25);--card-radius:14px}
     [data-theme="light"]{
-      --bg:#f5f6fa;--panel:#ffffff;--card:#ffffff;--text:#1f2430;--muted:#5b6475;--accent:#3b82f6;
-      --ok:#22c55e;--border:#d1d5e2;--dash:#e1e4f0;--timer:#15803d;--btn:#eef0f7;--btn-border:#d4d7e5;--btn-hover:#e0e3f0;
-      --danger:#fef2f2;--danger-b:#fecaca;--card-52:#f1f5f9;--border-52:#cbd5f5;--card-22:#f9fafb;--border-22:#e5e7eb;
-      --card-night:#f5f3ff;--border-night:#ddd6fe;--clock:#92400e;--scroll:#e5e7f2;--red:#dc2626;--yellow:#eab308;--green:#16a34a;
-      --chip-bg:#f3f4ff;--chip-border:#c7d2fe;
-    }
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{
-      margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
-      background:radial-gradient(circle at top,#22263a 0,#151922 42%,#11131b 100%);
-      color:var(--text);min-height:100vh;display:flex;flex-direction:column;
-    }
-    body::before{
-      content:"";position:fixed;inset:0;pointer-events:none;
-      background:
-        radial-gradient(circle at 0 0,rgba(122,162,255,.12),transparent 55%),
-        radial-gradient(circle at 100% 0,rgba(51,209,122,.08),transparent 60%),
-        radial-gradient(circle at 0 100%,rgba(250,204,21,.05),transparent 55%);
-      opacity:.9;mix-blend-mode:screen;z-index:-1;
-    }
-    .app{
-      display:flex;flex-direction:column;gap:10px;max-width:1320px;margin:0 auto;padding:10px 10px 24px;
-      width:100%;position:relative;z-index:1;
-    }
-    header{
-      display:flex;align-items:center;justify-content:space-between;margin:6px 2px 2px;
-      gap:10px;flex-wrap:wrap;
-    }
-    header h1{
-      font-size:20px;font-weight:650;letter-spacing:.02em;display:flex;align-items:center;gap:8px;
-    }
-    .logo-dot{
-      width:8px;height:8px;border-radius:999px;background:linear-gradient(135deg,#4f46e5,#22c55e);
-      box-shadow:0 0 0 4px rgba(79,70,229,.18);
-    }
-    .header-sub{
-      font-size:11px;color:var(--muted);margin-top:1px;
-    }
-    .header-right{
-      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-    }
-    .pill{
-      border-radius:999px;border:1px solid var(--border);padding:6px 10px;font-size:11px;
-      display:inline-flex;align-items:center;gap:6px;background:rgba(15,23,42,.7);backdrop-filter:blur(18px);
-      box-shadow:0 12px 30px rgba(15,23,42,.55),0 0 0 1px rgba(148,163,184,.08);
-    }
-    [data-theme="light"] .pill{
-      background:rgba(255,255,255,.9);box-shadow:0 8px 20px rgba(15,23,42,.12);
-    }
-    .pill-label{color:var(--muted);font-size:11px;}
-    .pill-value{font-weight:600;font-size:12px;}
-    .status-dot{
-      width:7px;height:7px;border-radius:999px;
-      background:radial-gradient(circle at 30% 30%,#bbf7d0,#22c55e);
-      box-shadow:0 0 0 4px rgba(34,197,94,.15);
-    }
-    .btn{
-      border-radius:999px;border:1px solid var(--btn-border);background:var(--btn);
-      padding:6px 10px;font-size:12px;display:inline-flex;align-items:center;
-      gap:6px;cursor:pointer;color:var(--text);box-shadow:0 4px 12px rgba(15,23,42,.6);
-      transition:.15s background,.15s transform,.15s box-shadow,.15s border-color;
-    }
-    .btn:hover{
-      background:var(--btn-hover);
-      transform:translateY(-1px);
-      box-shadow:0 8px 18px rgba(15,23,42,.85);
-      border-color:var(--accent);
-    }
-    .btn:active{
-      transform:translateY(0);
-      box-shadow:0 4px 10px rgba(15,23,42,.7);
-    }
-    .btn-ghost{
-      background:transparent;border-color:var(--border);box-shadow:none;color:var(--muted);
-    }
-    .btn-ghost:hover{
-      background:rgba(148,163,184,.06);border-color:var(--accent);color:var(--text);
-      box-shadow:0 0 0 1px rgba(59,130,246,.35);
-    }
-    .btn-icon{
-      width:18px;height:18px;border-radius:999px;
-      display:inline-flex;align-items:center;justify-content:center;
-      background:linear-gradient(135deg,rgba(148,163,184,.16),rgba(51,65,85,.9));
-      box-shadow:0 0 0 1px rgba(30,64,175,.45),0 0 20px rgba(37,99,235,.45);
-      font-size:11px;font-weight:600;
-    }
-    .btn-text{font-weight:500;}
-    .btn-small{
-      padding:4px 8px;font-size:11px;
-    }
-    main{
-      display:flex;flex-direction:column;gap:8px;flex:1;
-    }
-    .board-wrap{
-      display:flex;flex-direction:column;gap:6px;min-height:0;
-      border-radius:18px;padding:10px 10px 12px;
-      background:radial-gradient(circle at top,#1f2435,#151822 46%,#10131b 100%);
-      border:1px solid rgba(148,163,184,.2);
-      box-shadow:
-        0 24px 60px rgba(15,23,42,.85),
-        0 0 0 1px rgba(148,163,184,.18),
-        inset 0 0 0 1px rgba(15,23,42,.9);
-      position:relative;overflow:hidden;
-    }
-    [data-theme="light"] .board-wrap{
-      background:radial-gradient(circle at top,#e5e7f5,#f5f7ff 38%,#edf1ff 100%);
-      border-color:rgba(148,163,184,.4);
-      box-shadow:0 20px 40px rgba(15,23,42,.16),0 0 0 1px rgba(148,163,184,.22);
-    }
-    .board-wrap::before{
-      content:"";position:absolute;inset:0;pointer-events:none;
-      background:
-        linear-gradient(to bottom,rgba(148,163,184,.24),transparent 23%);
-      mix-blend-mode:soft-light;opacity:.65;
-    }
-    .board-wrap-inner{
-      position:relative;z-index:1;display:flex;flex-direction:column;gap:6px;min-height:0;
-    }
-    .board-header{
-      display:flex;align-items:center;gap:8px;justify-content:space-between;flex-wrap:wrap;
-    }
-    .board-title{
-      display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;
-    }
-    .board-title-chip{
-      font-size:11px;color:var(--muted);font-weight:400;display:flex;align-items:center;gap:4px;
-      padding:3px 8px;border-radius:999px;border:1px solid rgba(148,163,184,.35);
-      background:radial-gradient(circle at top left,rgba(129,140,248,.26),rgba(15,23,42,.9));
-      box-shadow:0 10px 30px rgba(15,23,42,.9);
-    }
-    [data-theme="light"] .board-title-chip{
-      background:radial-gradient(circle at top left,rgba(129,140,248,.2),rgba(255,255,255,.88));
-      box-shadow:0 10px 22px rgba(15,23,42,.12);
-    }
-    .board-controls{
-      display:flex;align-items:center;gap:6px;flex-wrap:wrap;
-    }
-    .chips{
-      display:flex;flex-wrap:wrap;gap:4px;margin:4px 0 2px;
-    }
-    .chip{
-      display:inline-flex;align-items:center;gap:4px;
-      padding:3px 6px;border-radius:999px;
-      font-size:11px;border:1px solid var(--chip-border);
-      background:radial-gradient(circle at top left,rgba(30,64,175,.4),var(--chip-bg));
-      color:var(--muted);cursor:pointer;
-      box-shadow:0 6px 16px rgba(15,23,42,.6);
-      transition:.14s background,.14s transform,.14s box-shadow,.14s border-color,.14s color;
-    }
-    .chip span:last-child{
-      font-weight:600;color:var(--text);font-variant-numeric:tabular-nums;
-    }
-    .chip:hover{
-      transform:translateY(-1px);border-color:var(--accent);
-      background:radial-gradient(circle at top left,rgba(59,130,246,.55),var(--chip-bg));
-      box-shadow:0 10px 24px rgba(15,23,42,.9);
-      color:var(--text);
-    }
+      --bg:#f5f7fb;--panel:#ffffff;--card:#ffffff;--text:#0f1625;--muted:#5b6678;--accent:#2b5cff;
+      --ok:#2aa36b;--border:#dfe5f2;--dash:#e6ebf5;--timer:#146c2e;--btn:#eef2fb;--btn-border:#d6def0;--btn-hover:#e6ecfa;
+      --danger:#fdecef;--danger-b:#f5b3c1;--card-52:#f3f7ff;--border-52:#c5d6ff;--card-22:#fbf1ff;--border-22:#e6c8f0;
+      --pill-shift-bg:#fff6cf;--pill-shift-text:#7a6518;--pill-time-bg:#ffe7e1;--pill-time-text:#7a3a2d;
+      --chip-bg:#f1f5ff;--chip-border:#c7d4ff;--chip-hover:#e7eeff;--card-shadow:0 4px 14px rgba(0,0,0,.06)}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+    .topbar{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(21,25,34,.95),rgba(21,25,34,.6));backdrop-filter:blur(6px)}
+    [data-theme="light"] .topbar{background:linear-gradient(180deg,rgba(245,247,251,.9),rgba(245,247,251,.6))}
+    header{display:flex;align-items:center;gap:12px;padding:14px 18px}.spacer{flex:1}
+    button{background:var(--btn);border:1px solid var(--btn-border);color:var(--text);padding:8px 12px;border-radius:10px;cursor:pointer}
+    button:hover{background:var(--btn-hover)}.btn-chip{background:var(--chip-bg);border:1px solid var(--chip-border);border-radius:999px;font-weight:600}
+    .summarybar{display:flex;flex-wrap:wrap;gap:8px;padding:10px 16px 8px}.chip{display:inline-flex;gap:8px;padding:6px 12px;border:1px solid var(--chip-border);border-radius:999px;cursor:pointer}
+
     .board{
-      display:flex;gap:8px;overflow-x:auto;padding:4px 2px 4px 0;
-      min-height:300px;max-height:calc(100vh - 210px);
-      scrollbar-width:thin;
+      display:flex;gap:16px;padding:10px 16px 16px;
+      overflow:auto;cursor:default;
+      max-height: calc(100vh - 160px);
     }
-    .board::-webkit-scrollbar{
-      height:6px;
+    .board.grabbing{cursor:grabbing}
+    .col{min-width:280px;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:10px;display:flex;flex-direction:column}
+    .drop{flex:1;min-height:520px;padding:6px;border-radius:12px}
+    .card{background:var(--card);border:1px solid var(--border);border-radius:var(--card-radius);padding:10px;margin:8px;cursor:grab;box-shadow:var(--card-shadow)}
+    .card.dragging{opacity:.65;transform:scale(.98)}.card.disabled{cursor:not-allowed;opacity:.85}
+    .card.shift-52{background:var(--card-52);border-color:var(--border-52)}.card.shift-22{background:var(--card-22);border-color:var(--border-22)}
+    .img-hero{margin:-10px -10px 8px}.img-hero img{width:100%;display:block;border-radius:var(--card-radius) var(--card-radius) 0 0;border:0}
+    .name{font-weight:700;display:flex;align-items:center;gap:10px}.meta{color:var(--muted);font-size:12px;margin-top:4px}
+    .timer{margin-left:auto;font-variant-numeric:tabular-nums;color:var(--timer)}
+    .pills{display:flex;align-items:center;gap:8px;margin-top:8px}.pill{display:inline-flex;gap:6px;padding:4px 8px;border-radius:999px;font-size:11px}
+    .pill.shift{background:var(--pill-shift-bg);color:var(--pill-shift-text)}.pill.time{background:var(--pill-time-bg);color:var(--pill-time-text)}
+    .pill-upload{background:var(--btn);border:1px solid var(--btn-border);color:var(--muted);border-radius:999px;padding:4px 8px}
+    .sum{margin-top:8px;font-size:12px;color:var(--muted)} .sum td{padding:2px 0}.sum td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+    .footer{padding:8px 16px;color:var(--muted);font-size:12px}.hidden{display:none}
+
+    /* ===== Прогноз — модалка ===== */
+    .k-forecast-modal{position:fixed;inset:0;display:none;z-index:9999}
+    .k-forecast-modal[aria-hidden="false"]{display:block}
+    .k-forecast-backdrop{position:absolute;inset:0;background:rgba(7,10,18,.55)}
+    .k-forecast-panel{position:relative;max-width:880px;margin:6vh auto;background:#121829;color:#e8eef9;border:1px solid #2a3550;border-radius:16px;box-shadow:0 16px 56px rgba(0,0,0,.4);overflow:hidden}
+    .k-forecast-head{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #2a3550}
+    .k-forecast-close{background:transparent;color:#9fb2d1;border:0;font-size:24px;cursor:pointer;line-height:1}
+    .k-forecast-body{padding:16px}
+    .kf-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+    .kf-card{background:#0f1420;border:1px solid #22304e;border-radius:12px;padding:12px;min-height:92px;display:flex;flex-direction:column;gap:8px}
+    .kf-title{font-size:12px;color:#9fb2d1}
+    .kf-val{font-size:26px;font-weight:800}
+    .kf-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#9fb2d1}
+    .kf-ok  .kf-val{color:#28d17a}
+    .kf-warn .kf-val{color:#ffb020}
+    .kf-bad .kf-val{color:#ff6b6b}
+    .kf-mute .kf-val{color:#9fb2d1}
+    .kf-row{display:flex;align-items:center;justify-content:space-between}
+
+    /* ===== Мини-казино в модалке прогноза ===== */
+    #slot-machine{
+      margin-top:16px;
+      padding:12px 16px;
+      border-radius:12px;
+      background:#111827;
+      border:1px solid #374151;
+      max-width:260px;
     }
-    .board::-webkit-scrollbar-track{
-      background:transparent;
+    .slot-title{
+      font-size:14px;
+      margin-bottom:8px;
+      opacity:.85;
     }
-    .board::-webkit-scrollbar-thumb{
-      background:var(--scroll);border-radius:999px;
+    .slot-reels{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      margin-bottom:10px;
     }
-    .col{
-      flex:0 0 240px;display:flex;flex-direction:column;gap:6px;
-      background:linear-gradient(to bottom,var(--card) 0,rgba(15,23,42,.98) 100%);
-      border-radius:18px;border:1px solid var(--border);padding:7px 6px 7px;
-      box-shadow:0 18px 40px rgba(15,23,42,.9),0 0 0 1px rgba(148,163,184,.16);
-      position:relative;overflow:hidden;
+    .slot-reel{
+      flex:1;
+      height:52px;
+      border-radius:10px;
+      background:#020617;
+      border:1px solid #4b5563;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:28px;
+      box-shadow:0 4px 10px rgba(0,0,0,.35) inset;
+      transition:transform .15s ease-out;
     }
-    [data-theme="light"] .col{
-      background:linear-gradient(to bottom,var(--card),#eef1ff);
-      box-shadow:0 14px 30px rgba(15,23,42,.12);
+    .slot-reel.spin{transform:translateY(4px);}
+    #slot-spin-btn{
+      width:100%;
+      padding:8px 10px;
+      border-radius:10px;
+      border:none;
+      background:#7aa2ff;
+      color:#020617;
+      font-weight:600;
+      cursor:pointer;
+      font-size:14px;
     }
-    .col h3{
-      font-size:12px;font-weight:600;padding:3px 6px 1px;display:flex;justify-content:space-between;align-items:center;
-    }
-    .col h3 span:last-child{
-      font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;
-      padding:0 6px;border-radius:999px;border:1px solid rgba(148,163,184,.4);
-      background:radial-gradient(circle at top,rgba(148,163,184,.28),rgba(15,23,42,0));
-    }
-    .col .drop{
-      margin-top:4px;display:flex;flex-direction:column;gap:6px;min-height:46px;
-    }
-    .card{
-      border-radius:14px;border:1px solid var(--border);padding:6px 6px 5px;
-      background:radial-gradient(circle at top,rgba(148,163,184,.22),rgba(15,23,42,.98));
-      box-shadow:0 12px 26px rgba(15,23,42,.9),0 0 0 1px rgba(148,163,184,.16);
-      cursor:grab;user-select:none;
-      display:flex;flex-direction:column;gap:3px;position:relative;overflow:hidden;
-    }
-    .card.dragging{
-      opacity:.4;transform:scale(.98);
-    }
-    .card-header{
-      display:flex;align-items:center;justify-content:space-between;gap:6px;
-    }
-    .badge{
-      font-size:11px;border-radius:999px;padding:2px 7px 2px;
-      background:rgba(15,23,42,.7);border:1px solid rgba(148,163,184,.35);
-      color:var(--muted);display:inline-flex;align-items:center;gap:5px;
-    }
-    .badge-dot{
-      width:6px;height:6px;border-radius:999px;background:var(--accent);
-      box-shadow:0 0 0 3px rgba(59,130,246,.45);
-    }
-    .name{
-      font-size:13px;font-weight:600;
-    }
-    .meta{
-      display:flex;flex-wrap:wrap;gap:4px;margin-top:2px;
-    }
-    .meta span{
-      font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:4px;
-    }
-    .timer{
-      font-variant-numeric:tabular-nums;font-size:11px;
-      color:var(--timer);font-weight:500;display:inline-flex;align-items:center;gap:4px;
-    }
-    .timer-dot{
-      width:5px;height:5px;border-radius:999px;background:var(--timer);
-      box-shadow:0 0 0 3px rgba(182,240,182,.18);
-    }
-    .shift-pill{
-      font-size:10px;border-radius:999px;padding:2px 6px;
-      border:1px solid var(--border);color:var(--muted);margin-left:auto;
-      background:rgba(15,23,42,.7);
-    }
-    .shift-52{background:var(--card-52);border-color:var(--border-52);}
-    .shift-22{background:var(--card-22);border-color:var(--border-22);}
-    .shift-night{background:var(--card-night);border-color:var(--border-night);}
-    .status-label{
-      position:absolute;right:6px;bottom:5px;font-size:10px;color:var(--muted);
-      opacity:.8;
-    }
-    .status-label span{
-      padding:1px 5px;border-radius:999px;border:1px solid rgba(148,163,184,.45);
-      background:rgba(15,23,42,.8);
-    }
-    .status-limit{
-      font-size:10px;color:var(--muted);margin-top:2px;
-    }
-    .danger-card{
-      border-color:var(--danger-b);background:radial-gradient(circle at top,rgba(248,113,113,.18),rgba(15,23,42,.98));
-      box-shadow:0 16px 34px rgba(127,29,29,.9);
-    }
-    .danger-card .timer{color:#fecaca;}
-    .danger-card .timer-dot{background:#fecaca;box-shadow:0 0 0 3px rgba(254,202,202,.25);}
-    .summary{
-      display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;
-    }
-    .summary-title{
-      font-size:11px;color:var(--muted);margin-right:8px;
-    }
-    .summary-item{
-      font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:4px;
-    }
-    .summary-item strong{
-      font-variant-numeric:tabular-nums;
-    }
-    .avatar{
-      width:22px;height:22px;border-radius:999px;overflow:hidden;margin-right:4px;
-      flex-shrink:0;border:1px solid rgba(148,163,184,.6);
-      box-shadow:0 0 0 1px rgba(15,23,42,1),0 0 20px rgba(148,163,184,.5);
-      background:radial-gradient(circle at top,rgba(148,163,184,.35),rgba(15,23,42,1));
-      display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;
-    }
-    .avatar img{
-      width:100%;height:100%;object-fit:cover;display:block;
-    }
-    .avatar span{color:var(--text);}
-    .toolbar{
-      display:flex;align-items:center;gap:6px;margin-top:2px;flex-wrap:wrap;
-    }
-    .toolbar button{
-      border-radius:999px;border:1px solid var(--btn-border);background:var(--btn);
-      padding:3px 8px;font-size:11px;color:var(--muted);display:inline-flex;align-items:center;gap:4px;cursor:pointer;
-      box-shadow:0 4px 10px rgba(15,23,42,.7);
-    }
-    .toolbar button span:first-child{
-      width:14px;height:14px;border-radius:999px;border:1px solid rgba(148,163,184,.6);
-      display:inline-flex;align-items:center;justify-content:center;font-size:9px;
-    }
-    .toolbar button:hover{
-      background:var(--btn-hover);color:var(--text);border-color:var(--accent);
-    }
-    .status-overflow{
-      font-size:11px;color:var(--red);margin-top:2px;
-    }
-    .limit-ok{color:var(--green);}
-    .limit-warn{color:var(--yellow);}
-    .limit-bad{color:var(--red);}
-    .small{
-      font-size:11px;color:var(--muted);
-    }
-    .offline{
-      opacity:.7;filter:grayscale(.2);
-    }
-    .clock-pill{
-      display:inline-flex;align-items:center;gap:6px;
-      padding:4px 8px;border-radius:999px;border:1px solid var(--border);
-      background:rgba(15,23,42,.9);font-size:12px;color:var(--clock);
-      box-shadow:0 10px 24px rgba(15,23,42,.9),0 0 0 1px rgba(148,163,184,.18);
-    }
-    [data-theme="light"] .clock-pill{
-      background:rgba(255,255,255,.95);color:#92400e;
-      box-shadow:0 8px 18px rgba(15,23,42,.12);
-    }
-    .clock-icon{
-      width:16px;height:16px;border-radius:999px;
-      border:1px solid rgba(251,191,36,.7);
-      display:inline-flex;align-items:center;justify-content:center;font-size:11px;
-      background:radial-gradient(circle at 30% 30%,#fef9c3,#facc15);
-      box-shadow:0 0 0 1px rgba(180,83,9,.55),0 0 18px rgba(250,204,21,.6);
-    }
-    .clock-time{font-variant-numeric:tabular-nums;}
-    .clock-date{font-size:11px;color:var(--muted);}
-    .grid-footer{
-      display:flex;justify-content:space-between;align-items:center;margin-top:4px;
-      font-size:11px;color:var(--muted);gap:8px;flex-wrap:wrap;
-    }
-    .legend{
-      display:flex;align-items:center;gap:12px;flex-wrap:wrap;
-    }
-    .legend-item{
-      display:inline-flex;align-items:center;gap:5px;
-    }
-    .legend-dot{
-      width:10px;height:10px;border-radius:999px;
-      background:radial-gradient(circle at 30% 30%,#f97316,#b45309);
-      box-shadow:0 0 0 3px rgba(234,88,12,.35);
-    }
-    .legend-dot.green{
-      background:radial-gradient(circle at 30% 30%,#22c55e,#15803d);
-      box-shadow:0 0 0 3px rgba(34,197,94,.35);
-    }
-    .legend-dot.red{
-      background:radial-gradient(circle at 30% 30%,#ef4444,#991b1b);
-      box-shadow:0 0 0 3px rgba(239,68,68,.35);
-    }
-    .legend-label{
-      font-size:11px;color:var(--muted);
-    }
-    .footer-right{
-      display:flex;align-items:center;gap:8px;flex-wrap:wrap;
-    }
-    .theme-switch{
-      display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer;
-    }
-    .theme-switch-toggle{
-      width:32px;height:16px;border-radius:999px;border:1px solid var(--border);
-      background:rgba(15,23,42,.9);position:relative;box-shadow:0 4px 10px rgba(15,23,42,.9);
-    }
-    [data-theme="light"] .theme-switch-toggle{
-      background:#e5e7eb;
-    }
-    .theme-switch-thumb{
-      position:absolute;top:1px;left:1px;width:12px;height:12px;border-radius:999px;
-      background:radial-gradient(circle at 30% 30%,#f9fafb,#e5e7eb);
-      box-shadow:0 0 0 1px rgba(15,23,42,.55),0 0 12px rgba(148,163,184,.65);
-      transition:.16s transform;
-    }
-    [data-theme="light"] .theme-switch-thumb{
-      transform:translateX(14px);background:radial-gradient(circle at 30% 30%,#fef9c3,#facc15);
-      box-shadow:0 0 0 1px rgba(180,83,9,.6),0 0 14px rgba(250,204,21,.7);
-    }
-    .login-subtitle{
-      font-size:12px;color:var(--muted);margin:4px 0 0;
-    }
-    .empty{
-      margin-top:6px;font-size:12px;color:var(--muted);
-    }
-    .cards-counter{
-      font-size:11px;color:var(--muted);
+    #slot-spin-btn:disabled{
+      opacity:.6;
+      cursor:default;
     }
     .slot-result{
       margin-top:6px;
@@ -408,14 +123,14 @@
       opacity:.9;
     }
 
-    /* Плашка-переключатель режима перерывов */
+    /* ===== Плашка-переключатель над "Перерыв" ===== */
     .break-toggle{
-      margin:4px 8px 6px;
+      margin:4px 8px 0;
       padding:4px 10px;
       border-radius:999px;
       border:1px solid transparent;
       font-size:12px;
-      font-weight:500;
+      font-weight:600;
       cursor:pointer;
       background:var(--btn);
       color:var(--muted);
@@ -440,551 +155,732 @@
 
 <!-- LOGIN -->
 <div id="login">
-  <div class="box" style="max-width:420px;margin:80px auto;background:rgba(15,23,42,.96);border-radius:20px;padding:18px 18px 16px;border:1px solid rgba(148,163,184,.4);box-shadow:0 24px 60px rgba(15,23,42,.9);">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:10px;">
-      <div>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div class="logo-dot"></div>
-          <div>
-            <div style="font-size:15px;font-weight:650;letter-spacing:.02em;">Учёт перерывов</div>
-            <div class="login-subtitle">Вход по коду оператора</div>
-          </div>
-        </div>
-      </div>
-      <div style="text-align:right;font-size:11px;color:var(--muted);">
-        <div>Смена: <span id="loginShiftLabel">—</span></div>
-        <div id="loginDateLabel">—</div>
-      </div>
-    </div>
-    <div style="margin-top:10px;">
-      <label style="display:block;font-size:12px;margin-bottom:4px;color:var(--muted);">Код оператора</label>
-      <input id="code" maxlength="6" inputmode="numeric" autocomplete="one-time-code"
-             style="width:100%;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:rgba(15,23,42,.95);color:var(--text);font-size:14px;outline:none;box-shadow:0 8px 20px rgba(15,23,42,.8);"
-             placeholder="Например, 123456">
-      <div id="loginError" style="margin-top:6px;font-size:11px;color:var(--red);display:none;"></div>
-    </div>
-    <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center;gap:10px;">
-      <button id="btnLogin" class="btn" style="flex:1;justify-content:center;">
-        <span class="btn-icon">→</span><span class="btn-text">Войти</span>
-      </button>
-      <button id="btnThemeLogin" class="btn btn-ghost btn-small" type="button">
-        <span class="btn-icon" style="width:16px;height:16px;font-size:10px;">☾</span>
-        <span class="btn-text" style="font-size:11px;">Тема</span>
-      </button>
+  <div class="box" style="max-width:420px;margin:80px auto;background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:18px">
+    <h1 style="margin:0 0 8px 0;font-size:20px">Вход по коду</h1>
+    <p style="margin:0 0 12px 0;color:var(--muted)">Введите ваш 6-значный код доступа.</p>
+    <div style="display:flex;gap:8px">
+      <input id="codeInput" inputmode="numeric" pattern="\\d{6}" maxlength="6" placeholder="000000"
+             style="flex:1;padding:10px;border-radius:10px;border:1px solid var(--btn-border);background:var(--card);color:var(--text)"/>
+      <button id="btnDoLogin">Войти</button>
     </div>
   </div>
 </div>
 
-<!-- APP -->
-<div class="app" id="app" style="display:none;">
+<!-- TOP -->
+<div id="topbar" class="topbar hidden">
   <header>
-    <div>
-      <h1><span class="logo-dot"></span>Учёт перерывов</h1>
-      <div class="header-sub">Живой дашборд по статусам операторов</div>
-    </div>
-    <div class="header-right">
-      <div class="pill">
-        <span class="status-dot"></span>
-        <div style="display:flex;flex-direction:column;">
-          <span class="pill-label">Сейчас на линии</span>
-          <span class="pill-value"><span id="onlineCount">0</span> оператор(ов)</span>
-        </div>
-      </div>
-      <div class="pill">
-        <div style="display:flex;flex-direction:column;">
-          <span class="pill-label">Моя смена</span>
-          <span class="pill-value" id="myShiftLabel">—</span>
-        </div>
-      </div>
-      <div class="clock-pill">
-        <span class="clock-icon">⏱</span>
-        <div style="display:flex;flex-direction:column;gap:1px;">
-          <span class="clock-time" id="clockTime">--:--</span>
-          <span class="clock-date" id="clockDate">--</span>
-        </div>
-      </div>
-      <button id="btnNewDay" class="btn btn-ghost btn-small" type="button">
-        <span class="btn-icon" style="width:16px;height:16px;font-size:10px;">★</span>
-        <span class="btn-text" style="font-size:11px;">Новый день</span>
-      </button>
-      <button id="btnLogout" class="btn btn-ghost btn-small" type="button">
-        <span class="btn-icon" style="width:16px;height:16px;font-size:10px;">↩</span>
-        <span class="btn-text" style="font-size:11px;">Выйти</span>
-      </button>
-    </div>
+    <div>Вы: <span id="who">…</span> <span class="badge" id="roleBadge">Оператор</span></div>
+    <div class="spacer"></div>
+    <button id="btnTheme" class="btn-chip" title="Переключить тему">Тема: тёмная</button>
+    <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
+    <button id="btnReports" class="btn-chip hidden">Отчёты</button>
+
+    <!-- Кнопка ПРОГНОЗ в правом верхнем углу -->
+    <button id="k-forecast-btn" class="btn-chip">Прогноз</button>
+
+    <button id="btnLogout" class="btn-chip">Выйти</button>
   </header>
-
-  <main>
-    <div class="board-wrap">
-      <div class="board-wrap-inner">
-        <div class="board-header">
-          <div class="board-title">
-            <span>Статусы операторов</span>
-            <div class="board-title-chip">
-              <span style="width:14px;height:14px;border-radius:999px;border:1px solid rgba(129,140,248,.6);display:inline-flex;align-items:center;justify-content:center;font-size:9px;">∞</span>
-              <span>Данные обновляются каждые 10 сек</span>
-            </div>
-          </div>
-          <div class="board-controls">
-            <div class="cards-counter">
-              Всего операторов: <strong id="totalOperators">0</strong>
-            </div>
-            <button id="btnRefresh" class="btn btn-small" type="button">
-              <span class="btn-icon" style="width:16px;height:16px;font-size:10px;">⟳</span>
-              <span class="btn-text" style="font-size:11px;">Обновить</span>
-            </button>
-            <button id="btnTheme" class="btn btn-ghost btn-small" type="button">
-              <span class="btn-icon" style="width:16px;height:16px;font-size:10px;">☾</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="chips" id="summaryChips"></div>
-
-        <div class="board" id="appBoard">
-          <div class="empty">Загрузка статусов...</div>
-        </div>
-
-        <div class="grid-footer">
-          <div class="legend">
-            <div class="legend-item">
-              <span class="legend-dot"></span>
-              <span class="legend-label">> 15 минут в статусе</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot green"></span>
-              <span class="legend-label">Норма</span>
-            </div>
-            <div class="legend-item">
-              <span class="legend-dot red"></span>
-              <span class="legend-label">Переработка / долгий статус</span>
-            </div>
-          </div>
-          <div class="footer-right">
-            <div class="theme-switch" id="themeSwitch">
-              <span>Тема</span>
-              <div class="theme-switch-toggle"><div class="theme-switch-thumb"></div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
+  <div id="summary" class="summarybar hidden"></div>
 </div>
 
+<!-- BOARD -->
+<div id="appBoard" class="board hidden"></div>
+<div id="appFooter" class="footer hidden">Перетаскивайте карточки между колонками. Панорамирование: зажмите ЛКМ в пустой области и тяните.</div>
+
+<!-- REPORTS -->
+<div id="reports" class="hidden" style="padding:16px">
+  <div class="panel" style="background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:12px;margin-bottom:12px">
+    <label>Период:</label>
+    <input type="date" id="repFrom"> — <input type="date" id="repTo" style="margin-right:12px">
+    <label>Оператор:</label> <select id="repOperator" style="margin-right:12px"><option value="">Все</option></select>
+    <label>Тимлид:</label> <select id="repTeamlead" style="margin-right:12px"><option value="">Все</option></select>
+    <button id="btnBuildRep" class="btn-chip">Сформировать</button>
+    <span id="repStatus" style="margin-left:8px;color:var(--muted)"></span>
+  </div>
+  <div class="panel" style="background:var(--panel);border:1px dashed var(--dash);border-radius:14px;padding:12px">
+    <table id="repTable" style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Оператор</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Тимлид</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Рабочее</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Перерыв</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px солид var(--border)">Ожидание</th>
+          <th style="text-align:left;padding:6px;border-bottom:1px solid var(--border)">Обед</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- МОДАЛКА ПРОГНОЗ -->
+<div id="k-forecast-modal" class="k-forecast-modal" aria-hidden="true">
+  <div class="k-forecast-backdrop" data-close></div>
+  <div class="k-forecast-panel" role="dialog" aria-modal="true" aria-labelledby="k-forecast-title">
+    <div class="k-forecast-head">
+      <h3 id="k-forecast-title">Прогноз</h3>
+      <button class="k-forecast-close" title="Закрыть" data-close>&times;</button>
+    </div>
+    <div id="k-forecast-body" class="k-forecast-body"></div>
+  </div>
+</div>
+
+  
 <script>
-(function(){
-  const state = {
-    session:null,
-    cards:[],
-    statuses:["Чаты","Ожидание","Перерыв","Обед","Обучение","Совещание","Другое"],
-    timers:{},
-    lastColumnsHash:{},
-    theme:localStorage.getItem('kaiten_theme')||'dark',
-  };
+// Разрешаем работу везде
+window.__blocked = false;
 
-  function setTheme(theme){
-    state.theme = theme;
-    document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('kaiten_theme', theme);
-    const iconLogin = document.querySelector('#btnThemeLogin .btn-icon');
-    const iconMain = document.querySelector('#btnTheme .btn-icon');
-    if (iconLogin) iconLogin.textContent = theme === 'dark' ? '☾' : '☀';
-    if (iconMain) iconMain.textContent = theme === 'dark' ? '☾' : '☀';
+/* ====== THEME ====== */
+function applyTheme(theme){
+  document.body.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  const btn = document.getElementById('btnTheme');
+  if (btn) btn.textContent = 'Тема: ' + (theme==='light' ? 'светлая' : 'тёмная');
+}
+document.getElementById('btnTheme').onclick = ()=>{
+  const next = (document.body.getAttribute('data-theme')==='light') ? 'dark' : 'light';
+  applyTheme(next);
+};
+
+const state = {
+  statuses:[], cards:[], session:null, serverOffsetMs:0, page:'board',
+  lastColumnsHash:{}
+};
+const MAX_DATAURL_LEN = 49000;
+
+// ============ API helper ============
+async function api(url, opts={}){
+  const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
+  if (!r.ok) throw new Error(await r.text());
+  return r.headers.get('content-type')?.includes('application/json') ? r.json() : r.text();
+}
+
+// ============ Session ============
+function applySession(sess){
+  state.session = sess;
+  document.getElementById('who').textContent = sess?.displayName || sess?.operatorId || '—';
+  document.getElementById('roleBadge').textContent = (sess?.role==='admin') ? 'Админ' : 'Оператор';
+  const isAdmin = sess?.role==='admin';
+  document.getElementById('btnNewDay').classList.toggle('hidden', !isAdmin);
+  document.getElementById('btnReports').classList.toggle('hidden', !isAdmin);
+}
+async function restoreSession(){
+  const token = localStorage.getItem('token');
+  if (!token) return null;
+  try { return await api('/api/session?token='+encodeURIComponent(token)); } catch { return null; }
+}
+
+// ============ Login ============
+// сохраняем 6-значный код в localStorage ('kaiten_code') — нужен модалке «Прогноз»
+document.getElementById('btnDoLogin').onclick = async ()=>{
+  const code = (document.getElementById('codeInput').value||'').trim();
+  try{
+    const sess = await api('/api/login',{method:'POST',body:JSON.stringify({code})});
+    localStorage.setItem('token', sess.token);
+    localStorage.setItem('kaiten_code', code);
+
+    applySession(sess);
+    document.getElementById('login').style.display='none';
+    document.getElementById('topbar').classList.remove('hidden');
+    fullReload();
+  }catch(e){ alert('Код неверный'); }
+};
+document.getElementById('btnLogout').onclick = ()=>{
+  localStorage.removeItem('token');
+  // при желании можно чистить и kaiten_code:
+  // localStorage.removeItem('kaiten_code');
+  location.reload();
+};
+
+// ============ Load/render ============
+let __loadCtrl = null;
+async function fullReload(){ await load(); }
+
+async function load(){
+  if (__loadCtrl) { try{ __loadCtrl.abort(); }catch{} }
+  __loadCtrl = new AbortController();
+  let data = null;
+  try{
+    const r = await fetch('/api/board', { headers:{'Content-Type':'application/json'}, signal: __loadCtrl.signal });
+    if (!r.ok) throw new Error(await r.text());
+    data = await r.json();
+  }catch(e){
+    if (e.name === 'AbortError') return;
+    console.warn('load() failed:', e.message||e);
+    return;
+  }finally{
+    __loadCtrl = null;
   }
+  if (!data) return;
+  if (data?.serverNowIso) state.serverOffsetMs = new Date(data.serverNowIso).getTime() - Date.now();
+  render(data);
+}
 
-  function initTheme(){
-    const saved = state.theme;
-    setTheme(saved);
-  }
+function render(data){
+  state.statuses = data.statuses||[]; state.cards = data.cards||[];
 
-  function fmtTime(sec){
-    if (sec < 0) sec = 0;
-    const h = Math.floor(sec/3600);
-    const m = Math.floor((sec%3600)/60);
-    const s = sec%60;
-    if (h>0) return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  }
-
-  function msToSec(ms){ return Math.floor(ms/1000); }
-
-  async function api(path, opts){
-    const headers = { 'Content-Type':'application/json' };
-    if (state.session && state.session.token) headers['Authorization'] = 'Bearer ' + state.session.token;
-    const res = await fetch(path, { ...opts, headers });
-    if (!res.ok){
-      let msg = 'Ошибка ' + res.status;
-      try{
-        const data = await res.json();
-        if (data && data.error) msg = data.error;
-      }catch(e){}
-      throw new Error(msg);
-    }
-    return res.json();
-  }
-
-  function saveSession(session){
-    state.session = session;
-    localStorage.setItem('kaiten_session', JSON.stringify(session));
-  }
-
-  function loadSession(){
-    try{
-      const s = localStorage.getItem('kaiten_session');
-      if (!s) return null;
-      return JSON.parse(s);
-    }catch(e){
-      return null;
-    }
-  }
-
-  function clearSession(){
-    state.session = null;
-    localStorage.removeItem('kaiten_session');
-  }
-
-  function renderSummary(byStatus){
-    const el = document.getElementById('summaryChips');
-    if (!el) return;
-    el.innerHTML = '';
-    const statuses = state.statuses;
-    statuses.forEach(s=>{
-      const chip = document.createElement('div'); chip.className='chip';
-      chip.innerHTML = `<span>${s}</span><span class="count">${(byStatus[s]||[]).length}</span>`;
-      chip.onclick = async ()=>{
-        if (!state.session) return;
-        const myId = (state.session.operatorId||'').trim(); if (!myId) return;
-        const me = (state.cards||[]).find(x=>String(x.id)===String(myId));
-        if (me && me.status === s) return;
-        await move(myId, s);
-      };
-      el.appendChild(chip);
+  const byStatus = {}; state.statuses.forEach(s=>byStatus[s]=[]);
+  (state.cards||[]).forEach(c => (byStatus[c.status]||(byStatus[c.status]=[])).push(c));
+  state.statuses.forEach(s=>{
+    (byStatus[s]||[]).sort((a,b)=>{
+      const ta = a.statusSince ? new Date(a.statusSince).getTime() : 0;
+      const tb = b.statusSince ? new Date(b.statusSince).getTime() : 0;
+      return (s==='Хочу в перерыв') ? (ta - tb) : (tb - ta);
     });
-  }
+  });
 
-  function hashColumn(cards){ return (cards||[]).map(c=>c.id+':' + (c.statusSince||'')).join('|'); }
+  renderSummary(byStatus); renderColumns(byStatus); tickTimers();
 
-  function renderColumns(byStatus){
-    const root = document.getElementById('appBoard');
-    if (!root.dataset.ready){
-      root.innerHTML='';
-      state.statuses.forEach(s=>{
-        const col = document.createElement('div'); col.className='col'; col.dataset.status=s;
-        col.innerHTML = `<h3 style="margin:6px 8px 10px">${s} <span class="count">0</span></h3><div class="drop" data-status="${s}"></div>`;
-        enableDrop(col.querySelector('.drop')); root.appendChild(col);
-      });
-      root.dataset.ready='1';
-
-      // Плашка-переключатель над столбцом "Перерыв"
-      const breakCol = root.querySelector('.col[data-status="Перерыв"]');
-      if (breakCol && !breakCol.querySelector('.break-toggle')) {
-        const header = breakCol.querySelector('h3');
-        const toggle = document.createElement('button');
-        toggle.type = 'button';
-        toggle.className = 'break-toggle break-toggle--single';
-        toggle.dataset.mode = 'single'; // single = по одному, double = по двое
-
-        const updateBreakToggle = () => {
-          if (toggle.dataset.mode === 'single') {
-            toggle.textContent = 'Перерыв: по одному';
-            toggle.classList.add('break-toggle--single');
-            toggle.classList.remove('break-toggle--double');
-          } else {
-            toggle.textContent = 'Перерыв: по двое';
-            toggle.classList.add('break-toggle--double');
-            toggle.classList.remove('break-toggle--single');
-          }
-        };
-
-        updateBreakToggle();
-
-        toggle.addEventListener('click', () => {
-          toggle.dataset.mode = toggle.dataset.mode === 'single' ? 'double' : 'single';
-          updateBreakToggle();
-        });
-
-        // вставляем плашку прямо над заголовком колонки "Перерыв"
-        if (header) breakCol.insertBefore(toggle, header);
-        else breakCol.insertBefore(toggle, breakCol.firstChild);
-      }
-
-    }
+  document.getElementById('summary').classList.remove('hidden');
+  document.getElementById('appBoard').classList.remove('hidden');
+  document.getElementById('appFooter').classList.remove('hidden');
+}
+function renderSummary(byStatus){
+  const summary = document.getElementById('summary'); summary.innerHTML='';
+  state.statuses.forEach(s=>{
+    const chip = document.createElement('div'); chip.className='chip';
+    chip.innerHTML = `<span>${s}</span><span class="count">${(byStatus[s]||[]).length}</span>`;
+    chip.onclick = async ()=>{
+      if (!state.session) return;
+      const myId = (state.session.operatorId||'').trim(); if (!myId) return;
+      const me = (state.cards||[]).find(x=>String(x.id)===String(myId));
+      if (me && me.status === s) return; // не дёргаем бэк, если тот же статус
+      await move(myId, s);
+    };
+    summary.appendChild(chip);
+  });
+}
+function hashColumn(cards){ return (cards||[]).map(c=>c.id+':' + (c.statusSince||'')).join('|'); }
+function renderColumns(byStatus){
+  const root = document.getElementById('appBoard');
+  if (!root.dataset.ready){
+    root.innerHTML='';
     state.statuses.forEach(s=>{
-      const cards = byStatus[s]||[]; const newHash = hashColumn(cards);
-      const col = root.querySelector(`.col[data-status="${s.replace(/"/g,'\\"')}"]`); if (!col) return;
-      col.querySelector('.count').textContent = String(cards.length);
-      if (state.lastColumnsHash[s] === newHash) return;
-      state.lastColumnsHash[s] = newHash;
-      const drop = col.querySelector('.drop'); drop.innerHTML='';
-      const frag = document.createDocumentFragment();
-      cards.forEach(c => frag.appendChild(makeCard(c)));
-      drop.appendChild(frag);
+      const col = document.createElement('div'); col.className='col'; col.dataset.status=s;
+      col.innerHTML = `<h3 style="margin:6px 8px 10px">${s} <span class="count">0</span></h3><div class="drop" data-status="${s}"></div>`;
+      enableDrop(col.querySelector('.drop')); root.appendChild(col);
     });
-  }
 
-  function detectShiftClass(shift){
-    const s=String(shift||'').toLowerCase();
-    if(s==='5/2')return'shift-52';
-    if(s==='2/2')return'shift-22';
-    if(s.includes('ноч'))return'shift-night';
-    return'';
-  }
+    // Плашка-переключатель над колонкой "Перерыв"
+    const breakCol = root.querySelector('.col[data-status="Перерыв"]');
+    if (breakCol && !breakCol.querySelector('.break-toggle')) {
+      const header = breakCol.querySelector('h3');
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'break-toggle break-toggle--single';
+      toggle.dataset.mode = 'single'; // single = по одному, double = по двое
 
-  function makeCard(c){
-    const el = document.createElement('div'); el.className='card'; el.dataset.id=c.id;
-    const nowSec = msToSec(Date.now()/1 - (c.serverNow||Date.now()));
-    const statusSince = c.statusSince ? msToSec((Date.now())/1 - new Date(c.statusSince).getTime()) : 0;
-    const dangerous = statusSince > 15*60;
-    if (dangerous) el.classList.add('danger-card');
-    if (!c.isOnline) el.classList.add('offline');
-    const shiftClass = detectShiftClass(c.shift);
-    const avatarLetter = (c.name||'?').trim().charAt(0).toUpperCase()||'?';
-    el.innerHTML = `
-      <div class="card-header">
-        <div style="display:flex;align-items:center;gap:6px;">
-          <div class="avatar">
-            ${c.avatar ? `<img src="${c.avatar}" alt="">` : `<span>${avatarLetter}</span>`}
-          </div>
-          <div>
-            <div class="name">${c.name||'Без имени'}</div>
-            <div class="meta">
-              <span><span style="width:6px;height:6px;border-radius:999px;background:${c.isOnline?'#22c55e':'#ef4444'};display:inline-block;"></span>${c.isOnline?'Онлайн':'Оффлайн'}</span>
-              <span>${c.team||'Без команды'}</span>
-            </div>
-          </div>
-        </div>
-        ${c.shift ? `<div class="shift-pill ${shiftClass}">${c.shift}</div>`:``}
-      </div>
-      <div class="toolbar">
-        <button data-action="set-comment"><span>✎</span><span>Комментарий</span></button>
-        <button data-action="add-image"><span>📷</span><span>Фото</span></button>
-      </div>
-      <div class="meta">
-        <span class="timer"><span class="timer-dot"></span><span data-role="timer"></span></span>
-      </div>
-      <div class="status-label"><span>${c.status||'—'}</span></div>
-    `;
-    el.querySelectorAll('.toolbar button').forEach(btn=>{
-      btn.addEventListener('click', async (ev)=>{
-        ev.stopPropagation();
-        const action = btn.dataset.action;
-        if (action === 'add-image'){
-          await handleAddImage(c);
-        } else if (action === 'set-comment'){
-          const comment = prompt('Комментарий к статусу (например, причина долгого перерыва):', c.comment||'');
-          if (comment === null) return;
-          try {
-            await api('/api/move', {
-              method:'POST',
-              body: JSON.stringify({ operatorId: c.id, newStatus: c.status, comment })
-            });
-            await loadBoard();
-          } catch (e) {
-            alert(e.message||'Ошибка сохранения комментария');
-          }
+      const updateBreakToggle = () => {
+        if (toggle.dataset.mode === 'single') {
+          toggle.textContent = 'Перерыв: по одному';
+          toggle.classList.add('break-toggle--single');
+          toggle.classList.remove('break-toggle--double');
+        } else {
+          toggle.textContent = 'Перерыв: по двое';
+          toggle.classList.add('break-toggle--double');
+          toggle.classList.remove('break-toggle--single');
         }
+      };
+
+      updateBreakToggle();
+
+      toggle.addEventListener('click', () => {
+        toggle.dataset.mode = toggle.dataset.mode === 'single' ? 'double' : 'single';
+        updateBreakToggle();
       });
-    });
-    const timerEl = el.querySelector('[data-role="timer"]');
-    if (timerEl){
-      state.timers[c.id] = { el:timerEl, startedAt: c.statusSince ? new Date(c.statusSince).getTime() : Date.now(), dangerous };
+
+      // вставляем плашку над заголовком колонки "Перерыв"
+      if (header) breakCol.insertBefore(toggle, header);
+      else breakCol.insertBefore(toggle, breakCol.firstChild);
     }
-    return el;
-  }
 
-  function updateTimers(){
-    const now = Date.now();
-    Object.keys(state.timers).forEach(id=>{
-      const t = state.timers[id];
-      const sec = msToSec(now - t.startedAt);
-      if (t.el) t.el.textContent = fmtTime(sec);
-    });
+    root.dataset.ready='1';
   }
+  state.statuses.forEach(s=>{
+    const cards = byStatus[s]||[]; const newHash = hashColumn(cards);
+    const col = root.querySelector(`.col[data-status="${s.replace(/"/g,'\\"')}"]`); if (!col) return;
+    col.querySelector('.count').textContent = String(cards.length);
+    if (state.lastColumnsHash[s] === newHash) return;
+    state.lastColumnsHash[s] = newHash;
+    const drop = col.querySelector('.drop'); drop.innerHTML='';
+    const frag = document.createDocumentFragment();
+    cards.forEach(c => frag.appendChild(makeCard(c)));
+    drop.appendChild(frag);
+  });
+}
+function detectShiftClass(shift){ const s=String(shift||'').toLowerCase(); if(s==='5/2')return'shift-52'; if(s==='2/2')return'shift-22'; return''; }
+function makeCard(c){
+  const el = document.createElement('div');
+  el.className = 'card ' + detectShiftClass(c.shift);
+  const isAdmin = state.session?.role==='admin';
+  const sessId = (state.session?.operatorId||'').trim();
+  const cardId = String(c.id||'').trim();
+  const isOwn = sessId === cardId;
+  el.draggable = !!(isAdmin || isOwn); if (!el.draggable) el.classList.add('disabled');
+  el.dataset.id = cardId; el.dataset.status = c.status;
+  if (c.statusSince) el.dataset.since = c.statusSince; if (c.shiftStart) el.dataset.shiftStart = c.shiftStart;
+  const t = c.totals||{}; el.dataset.totalLine=t.totalLine||0; el.dataset.totalBreak=t.totalBreak||0; el.dataset.totalWait=t.totalWait||0; el.dataset.totalLunch=t.totalLunch||0;
+  const avatar = (c.images&&c.images.length)?c.images[c.images.length-1]:'';//
+  el.innerHTML =
+    (avatar?`<div class="img-hero"><img src="${avatar}"></div>`:'')+
+    `<div class="name"><div>${esc(c.name)}</div><span class="timer"></span></div>`+
+    `<div class="meta">${c.role==='admin'?'<span class="tag">Админ</span>':''}</div>`+
+    `<div class="pills">
+       ${c.shift?`<span class="pill shift">${esc(c.shift)}</span>`:''}
+       ${c.workHours?`<span class="pill time">${esc(c.workHours)}</span>`:''}
+       <button class="pill-upload" type="button">+ фото</button>
+     </div>`+
+    `<div class="sum"><table>
+       <tr><td>Рабочее время</td><td class="sum-line">00:00</td></tr>
+       <tr><td>Перерыв</td><td class="sum-break">00:00</td></tr>
+       <tr><td>Ожидание</td><td class="sum-wait">00:00</td></tr>
+       <tr><td>Обед</td><td class="sum-lunch">00:00</td></tr>
+     </table></div>
+     <div class="startline"><span class="start-text"></span></div>`;
+  el.querySelector('.pill-upload').onclick = ()=> triggerAddImage(cardId);
+  el.addEventListener('dragstart', e=>{
+    if(!el.draggable){e.preventDefault();return;}
+    el.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', cardId);
+    __asStart();
+  });
+  el.addEventListener('dragend', ()=>{
+    el.classList.remove('dragging');
+    __asStop();
+  });
+  return el;
+}
+function enableDrop(zone){
+  zone.addEventListener('dragover', e=>{
+    e.preventDefault();
+    zone.style.outline='2px dashed var(--accent)';
+    __asUpdateMouse(e);
+  });
+  zone.addEventListener('dragleave', ()=> zone.style.outline='none');
+  zone.addEventListener('drop', async e=>{
+    e.preventDefault(); zone.style.outline='none';
+    const id = (e.dataTransfer.getData('text/plain')||'').trim(); if(!id) return;
+    const to = zone.dataset.status;
+    const card = (state.cards||[]).find(x=>String(x.id)===String(id));
+    if (card && card.status === to) return; // не сбрасываем таймеры
+    await move(id,to);
+  });
+}
+async function move(operatorId, newStatus){
+  if (!state.session) return;
+  const id = String(operatorId||'').trim(); if (!id) return;
+  const cur = (state.cards||[]).find(x=>String(x.id)===String(id));
+  if (cur && cur.status === newStatus) return;
+  if (newStatus==='Выходной' && !confirm('Перевести в «Выходной»? Будут сброшены итоги и старт смены.')) return;
+  try{
+    await api('/api/move',{method:'POST',body:JSON.stringify({operatorId:id,newStatus,token:state.session.token,note:''})});
+    await load();
+  }catch(e){ console.warn('moveCard', e.message); }
+}
 
-  function enableDrop(dropEl){
-    dropEl.addEventListener('dragover', e=>{ e.preventDefault(); dropEl.style.outline='1px dashed var(--accent)'; dropEl.style.outlineOffset='-3px'; });
-    dropEl.addEventListener('dragleave', ()=>{ dropEl.style.outline='none'; });
-    dropEl.addEventListener('drop', async e=>{
-      e.preventDefault(); dropEl.style.outline='none';
-      const id = e.dataTransfer.getData('text/plain'); if (!id) return;
-      const newStatus = dropEl.dataset.status;
-      await move(id, newStatus);
-    });
-  }
-
-  async function move(id, newStatus){
+// ============ Images ============
+async function triggerAddImage(operatorId){
+  if (!state.session) return;
+  const input = document.createElement('input'); input.type='file'; input.accept='image/*'; input.style.display='none';
+  input.onchange = async ()=>{
+    const f = input.files?.[0]; if (!f) return;
     try{
-      await api('/api/move', {
-        method:'POST',
-        body: JSON.stringify({ operatorId:id, newStatus })
-      });
-      await loadBoard();
-    }catch(e){
-      alert(e.message||'Ошибка смены статуса');
-    }
-  }
-
-  async function loadBoard(){
-    try{
-      const data = await api('/api/board',{ method:'GET' });
-      state.cards = data.cards || [];
-      const byStatus = {};
-      state.statuses.forEach(s=> byStatus[s] = []);
-      state.cards.forEach(c=>{
-        if (!byStatus[c.status]) byStatus[c.status] = [];
-        byStatus[c.status].push(c);
-      });
-      const onlineCount = state.cards.filter(c => c.isOnline).length;
-      document.getElementById('onlineCount').textContent = String(onlineCount);
-      document.getElementById('totalOperators').textContent = String(state.cards.length);
-      renderSummary(byStatus);
-      renderColumns(byStatus);
-      state.timers = {};
-      const res = data;
-      const now = Date.now();
-      (state.cards||[]).forEach(c=>{
-        const timerEl = document.querySelector(`.card[data-id="${c.id}"] [data-role="timer"]`);
-        if (!timerEl) return;
-        const startedAt = c.statusSince ? new Date(c.statusSince).getTime() : now;
-        const danger = (now - startedAt) > 15*60*1000;
-        state.timers[c.id] = { el:timerEl, startedAt, dangerous: danger };
-      });
-    }catch(e){
-      console.error(e);
-    }
-  }
-
-  function updateClock(){
-    const now = new Date();
-    const timeEl = document.getElementById('clockTime');
-    const dateEl = document.getElementById('clockDate');
-    if (!timeEl || !dateEl) return;
-    const hh = String(now.getHours()).padStart(2,'0');
-    const mm = String(now.getMinutes()).padStart(2,'0');
-    timeEl.textContent = `${hh}:${mm}`;
-    dateEl.textContent = now.toLocaleDateString('ru-RU',{ weekday:'short', day:'2-digit', month:'2-digit', year:'numeric' });
-  }
-
-  function initThemeSwitch(){
-    const el = document.getElementById('themeSwitch');
-    if (!el) return;
-    el.addEventListener('click',()=>{
-      const next = state.theme === 'dark' ? 'light' : 'dark';
-      setTheme(next);
-    });
-  }
-
-  function initLogin(){
-    const session = loadSession();
-    if (session && session.token){
-      state.session = session;
-      document.getElementById('login').style.display='none';
-      document.getElementById('app').style.display='block';
-      document.getElementById('myShiftLabel').textContent = session.shift||'—';
-      loadBoard();
-      return;
-    }
-
-    const loginEl = document.getElementById('login');
-    const appEl = document.getElementById('app');
-    loginEl.style.display='block';
-    appEl.style.display='none';
-
-    const codeInput = document.getElementById('code');
-    const errorEl = document.getElementById('loginError');
-    const btnLogin = document.getElementById('btnLogin');
-
-    btnLogin.addEventListener('click', async ()=>{
-      const code = codeInput.value.trim();
-      if (!code){
-        errorEl.textContent = 'Введите код оператора';
-        errorEl.style.display='block';
-        return;
+      const dataUrl = await readAndResizeImage(f, 480);
+      if (dataUrl.length >= MAX_DATAURL_LEN) { alert('Изображение слишком большое'); return; }
+      await api('/api/addImage',{method:'POST',body:JSON.stringify({operatorId, token:state.session.token, dataUrl})});
+      await load();
+    }catch(e){ console.warn('addImage', e.message); }
+    finally{ input.remove(); }
+  };
+  document.body.appendChild(input); input.click();
+}
+function readAndResizeImage(file, maxW){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader(); fr.onerror=()=>reject(new Error('FileReader error'));
+    fr.onload=()=>{ const img=new Image(); img.onerror=()=>reject(new Error('Bad image')); img.onload=()=>{
+      let w=img.width,h=img.height; if(w>maxW){const k=maxW/w; w=Math.max(1,Math.round(w*k)); h=Math.max(1,Math.round(h*k));}
+      let quality=0.8, mime='image/webp'; const test=document.createElement('canvas').toDataURL('image/webp',0.5); if(!/^data:image\/webp/i.test(test)) mime='image/jpeg';
+      let attempts=0; const minQ=0.4, minW=160;
+      while(attempts<40){
+        attempts++; const cvs=document.createElement('canvas'); cvs.width=w; cvs.height=h; const ctx=cvs.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+        let out=cvs.toDataURL(mime,quality); if(!/^data:image\/(webp|jpeg)/i.test(out)){ mime='image/jpeg'; out=cvs.toDataURL(mime,quality); }
+        if(out.length<MAX_DATAURL_LEN) return resolve(out);
+        if(quality>minQ+1e-3){ quality=Math.max(minQ, +(quality-0.1).toFixed(2)); }
+        else if(w>minW){ w=Math.max(minW,Math.round(w*0.85)); h=Math.max(1,Math.round(h*0.85)); quality=0.8; }
+        else break;
       }
-      errorEl.style.display='none';
-      try{
-        const data = await api('/api/login', {
-          method:'POST',
-          body: JSON.stringify({ code })
-        });
-        saveSession(data.session);
-        document.getElementById('myShiftLabel').textContent = data.session.shift||'—';
-        document.getElementById('login').style.display='none';
-        document.getElementById('app').style.display='block';
-        loadBoard();
-      }catch(e){
-        errorEl.textContent = e.message||'Ошибка входа';
-        errorEl.style.display='block';
+      reject(new Error('Не удалось ужать изображение'));
+    }; img.src=fr.result; };
+    fr.readAsDataURL(file);
+  });
+}
+
+// ============ Timers / sums ============
+function tickTimers(){
+  if (document.hidden || state.page !== 'board') return;
+  const list = document.querySelectorAll('.card'); if (!list.length) return;
+
+  const nowMs = Date.now() + (state.serverOffsetMs||0);
+  list.forEach(el=>{
+    const since = el.dataset.since; const st = el.dataset.status;
+    let runningSec = 0; if (since && st!=='Выходной') runningSec = Math.max(0, Math.floor((nowMs - new Date(since).getTime())/1000));
+    const timerSpan = el.querySelector('.timer'); const txt = runningSec ? formatDuration(runningSec) : ''; if (timerSpan && timerSpan.textContent!==txt) timerSpan.textContent = txt;
+
+    const base = {
+      line: Number(el.dataset.totalLine||0),
+      brk:  Number(el.dataset.totalBreak||0),
+      wait: Number(el.dataset.totalWait||0),
+      lunch:Number(el.dataset.totalLunch||0)
+    };
+    if (st!=='Выходной'){
+      switch(st){
+        case 'Чаты': case 'Хочу в перерыв': case 'Звонки': case 'Обучение': base.line+=runningSec; break;
+        case 'Перерыв': case 'Перерыв на звонках': base.brk+=runningSec; break;
+        case 'Ожидание': case 'Ожидание Обед': base.wait+=runningSec; break;
+        case 'Обед': base.lunch+=runningSec; break;
       }
-    });
+    }else{ base.line=base.brk=base.wait=base.lunch=0; }
+    renderSums(el, base); renderStartLine(el);
+  });
+}
+setInterval(tickTimers, 1000);
 
-    codeInput.addEventListener('keydown', e=>{
-      if (e.key === 'Enter'){
-        btnLogin.click();
-      }
-    });
-  }
+function renderSums(el,b){
+  const s1=formatDuration(b.line), s2=formatDuration(b.brk), s3=formatDuration(b.wait), s4=formatDuration(b.lunch);
+  const a=el.querySelector('.sum-line'); if(a&&a.textContent!==s1)a.textContent=s1;
+  const b1=el.querySelector('.sum-break'); if(b1&&b1.textContent!==s2)b1.textContent=s2;
+  const c=el.querySelector('.sum-wait'); if(c&&c.textContent!==s3)c.textContent=s3;
+  const d=el.querySelector('.sum-lunch'); if(d&&d.textContent!==s4)d.textContent=s4;
+}
+function formatDuration(totalSec){ totalSec=Math.max(0,Math.floor(totalSec)); const hh=Math.floor(totalSec/3600), mm=Math.floor((totalSec%3600)/60), ss=totalSec%60; const pad=n=>(n<10?'0':'')+n; return (hh>0?pad(hh)+':':'')+pad(mm)+':'+pad(ss); }
+function esc(s){ return (s||'').replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'})[m]); }
+function renderStartLine(el){
+  const span=el.querySelector('.start-text'); if(!span) return;
+  const s=el.dataset.shiftStart; if(!s){ if(span.textContent!=='') span.textContent=''; return; }
+  const d=new Date(s); const now=new Date(Date.now()+(state.serverOffsetMs||0)); const pad=n=>(n<10?'0':'')+n;
+  const same = d.getFullYear()===now.getFullYear() && d.getMonth()===now.getMonth() && d.getDate()===now.getDate();
+  const hhmm = pad(d.getHours())+':'+pad(d.getMinutes());
+  span.textContent = same ? ('Начал смену в '+hhmm) : ('Начал смену '+pad(d.getDate())+'.'+pad(d.getMonth()+1)+'.'+d.getFullYear()+' в '+hhmm);
+}
 
-  function initLogout(){
-    const btnLogout = document.getElementById('btnLogout');
-    if (!btnLogout) return;
-    btnLogout.addEventListener('click',()=>{
-      clearSession();
-      location.reload();
-    });
-  }
-
-  async function handleAddImage(c){
-    try{
-      const fileUrl = prompt('Вставьте ссылку на изображение (JPG/PNG):', c.avatar||'');
-      if (!fileUrl) return;
-      await api('/api/addImage', {
-        method:'POST',
-        body: JSON.stringify({ operatorId:c.id, imageUrl:fileUrl })
-      });
-      await loadBoard();
-    }catch(e){
-      alert(e.message||'Ошибка добавления изображения');
+/* ============ AutoScroll while dragging (чувствительнее) ============ */
+let __asRAF = 0, __asActive = false, __mx = 0, __my = 0;
+const __EDGE = 160;
+const __MAXSPEED = 64;
+function __asUpdateMouse(e){ __mx = e.clientX; __my = e.clientY; if (!__asActive) __asStart(); }
+function __asStart(){
+  __asActive = true;
+  const loop = ()=>{
+    __asRAF = requestAnimationFrame(loop);
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let dx = 0, dy = 0;
+    if (__mx < __EDGE) dx = -((__EDGE - __mx)/__EDGE) * __MAXSPEED;
+    else if (vw - __mx < __EDGE) dx =  ((__EDGE - (vw - __mx))/__EDGE) * __MAXSPEED;
+    if (__my < __EDGE) dy = -((__EDGE - __my)/__EDGE) * __MAXSPEED;
+    else if (vh - __my < __EDGE) dy =  ((__EDGE - (vh - __my))/__EDGE) * __MAXSPEED;
+    const board = document.querySelector('.board');
+    if (board && dx) board.scrollLeft += dx;
+    if (dy) {
+      if (board && board.scrollHeight > board.clientHeight) board.scrollTop += dy;
+      else window.scrollBy(0, dy);
     }
-  }
+  };
+  loop();
+}
+function __asStop(){ __asActive = false; if (__asRAF) cancelAnimationFrame(__asRAF); __asRAF = 0; }
+document.addEventListener('dragover', (e)=>{ __asUpdateMouse(e); });
+document.addEventListener('drop', ()=> __asStop());
+document.addEventListener('dragleave', (e)=>{
+  if (e.clientX<=0 || e.clientY<=0 || e.clientX>=window.innerWidth || e.clientY>=window.innerHeight) __asStop();
+});
 
-  function initManualRefresh(){
-    const btn = document.getElementById('btnRefresh');
-    if (!btn) return;
-    btn.addEventListener('click', ()=>{
-      loadBoard();
-    });
-  }
+/* ============ PANNING: перемещение полотна мышью (X+Y) ============ */
+(function enablePanning(){
+  const board = document.getElementById('appBoard');
+  let isDown = false, startX = 0, startY = 0, sl = 0, st = 0;
 
-  function initThemeButtons(){
-    const loginBtn = document.getElementById('btnThemeLogin');
-    const mainBtn = document.getElementById('btnTheme');
-    [loginBtn, mainBtn].forEach(btn=>{
-      if (!btn) return;
-      btn.addEventListener('click', ()=>{
-        const next = state.theme === 'dark' ? 'light' : 'dark';
-        setTheme(next);
-      });
-    });
-  }
-
-  function init(){
-    initTheme();
-    initThemeSwitch();
-    initThemeButtons();
-    initLogin();
-    initLogout();
-    initManualRefresh();
-    setInterval(loadBoard, 10000);
-    setInterval(updateTimers, 1000);
-    updateClock();
-    setInterval(updateClock, 30000);
-  }
-
-  document.addEventListener('DOMContentLoaded', init);
+  board.addEventListener('mousedown', (e)=>{
+    if (e.button !== 0) return;
+    if (e.target.closest('.card') || /(input|button|select|textarea)/i.test(e.target.tagName)) return;
+    isDown = true;
+    board.classList.add('grabbing');
+    startX = e.clientX; startY = e.clientY;
+    sl = board.scrollLeft; st = board.scrollTop;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e)=>{
+    if (!isDown) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    board.scrollLeft = sl - dx;
+    if (board.scrollHeight > board.clientHeight) board.scrollTop  = st - dy;
+    else {
+      window.scrollTo({ top: window.scrollY - dy, left: window.scrollX });
+      startY = e.clientY; st = 0;
+    }
+  });
+  const stopPan = ()=>{
+    if (!isDown) return;
+    isDown = false;
+    board.classList.remove('grabbing');
+  };
+  window.addEventListener('mouseup', stopPan);
+  document.addEventListener('mouseleave', stopPan);
 })();
+
+// ============ Reports ============
+function fillReportSelectors(cards){
+  const opSel=document.getElementById('repOperator'), tlSel=document.getElementById('repTeamlead');
+  const ops = Array.from(new Set(cards.map(c=>JSON.stringify({id:c.id,name:c.name})))) .map(s=>JSON.parse(s)) .sort((a,b)=>a.name.localeCompare(b.name,'ru'));
+  const tls = Array.from(new Set(cards.map(c=>c.teamlead).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'ru'));
+  opSel.innerHTML='<option value=\"\">Все</option>'+ops.map(o=>`<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
+  tlSel.innerHTML='<option value=\"\">Все</option>'+tls.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('');
+  const today = new Date(); const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  if(!document.getElementById('repFrom').value) document.getElementById('repFrom').value = iso(today);
+  if(!document.getElementById('repTo').value)   document.getElementById('repTo').value   = iso(today);
+}
+document.getElementById('btnBuildRep').onclick = async ()=>{
+  const from = document.getElementById('repFrom').value;
+  const to   = document.getElementById('repTo').value;
+  const op   = document.getElementById('repOperator').value || '';
+  const tl   = document.getElementById('repTeamlead').value || '';
+  const q = new URLSearchParams({ from, to, operatorId: op, teamlead: tl });
+  const statusEl = document.getElementById('repStatus');
+  statusEl.textContent='Считаю...';
+  try{
+    const data = await api(`/api/report?${q.toString()}`);
+    const rows = data?.rows || [];
+    fillRepTable(rows);
+    statusEl.textContent = rows.length ? `Строк: ${rows.length}` : 'Нет данных за период';
+  }catch(e){
+    console.error('Report API error:', e);
+    statusEl.textContent = 'Ошибка при формировании отчёта. Подробности — в консоли.';
+  }
+};
+function secToHMS(s){ s=Math.max(0,Math.floor(s)); const h=Math.floor(s/3600), m=Math.floor((s%3600)/60), ss=s%60; const pad=n=>(n<10?'0':'')+n; return (h?pad(h)+':':'')+pad(m)+':'+pad(ss); }
+function fillRepTable(rows){
+  const tb=document.querySelector('#repTable tbody'); tb.innerHTML='';
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td style="padding:6px;border-bottom:1px solid var(--border)">${esc(r.name||r.operatorId)}</td>
+      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(r.teamlead||'')}</td>
+      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalLine||0))}</td>
+      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalBreak||0))}</td>
+      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalWait||0))}</td>
+      <td style="padding:6px;border-bottom:1px solid var(--border)">${esc(secToHMS(r.totalLunch||0))}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+// ============ Buttons & Page switch ============
+document.getElementById('btnReports').onclick = ()=> switchPage(state.page==='reports'?'board':'reports');
+document.getElementById('btnNewDay').onclick = async ()=>{
+  if (!state.session) return;
+  if (!confirm('Начать новый день? Всех переведёт в «Выходной», обнулит итоги и старт смены.')) return;
+  const actor = state.session.displayName || state.session.operatorId;
+  try{ await api('/api/newDay',{method:'POST',body:JSON.stringify({token:state.session.token, actor})}); await fullReload(); }catch(e){ alert('Нет прав'); }
+};
+function switchPage(page){
+  state.page=page; const isRep=page==='reports';
+  document.getElementById('summary').classList.toggle('hidden',isRep);
+  document.getElementById('appBoard').classList.toggle('hidden',isRep);
+  document.getElementById('appFooter').classList.toggle('hidden',isRep);
+  document.getElementById('reports').classList.toggle('hidden',!isRep);
+  if (isRep) stopPolling(); else { fullReload(); ensureBoardPolling(); }
+}
+
+// ============ Visibility pause ============
+document.addEventListener('visibilitychange', ()=>{
+  if (document.hidden) stopPolling();
+  else if (state.page === 'board') { fullReload(); ensureBoardPolling(); }
+});
+
+// ============ Bootstrap ============
+(async function bootstrap(){
+  applyTheme(localStorage.getItem('theme') || 'dark');
+  const sess = await restoreSession();
+  if (sess){
+    applySession(sess);
+    document.getElementById('login').style.display='none';
+    document.getElementById('topbar').classList.remove('hidden');
+    await fullReload();
+    ensureBoardPolling();
+  } else {
+    document.getElementById('login').style.display='flex';
+  }
+})();
+
+/* ======== Автообновление только на доске (10 сек) ======== */
+let __pollId = 0;
+function ensureBoardPolling(){
+  if (state.page !== 'board') return;
+  if (!__pollId) __pollId = setInterval(fullReload, 10000);
+}
+function stopPolling(){
+  if (__pollId){ clearInterval(__pollId); __pollId = 0; }
+}
 </script>
 
+<!-- ЛОГИКА МОДАЛКИ "ПРОГНОЗ" + КАЗИНО -->
+<script>
+/** ССЫЛКА НА Apps Script (web app, /exec) — замени на свою при необходимости */
+const APP_URL = 'https://script.google.com/macros/s/AKfycbwSkBCK7eFWXkWJpAf-UBnAhh1yiFOpknxB0kdLddnCITH7vyDPAwqPQdlCDKLsSd0Y/exec';
+
+/** Читаем код из localStorage (его сохраняем при логине) */
+function getUserCode(){ return localStorage.getItem('kaiten_code') || null; }
+
+/** Открыть/закрыть модалку */
+function kModal(open){
+  document.getElementById('k-forecast-modal').setAttribute('aria-hidden', open ? 'false' : 'true');
+}
+document.addEventListener('click', (e)=>{
+  const t=e.target;
+  if (t.matches('#k-forecast-btn')) showForecast();
+  if (t.closest('[data-close]')) kModal(false);
+});
+document.addEventListener('keydown', e => { if(e.key==='Escape') kModal(false); });
+
+/** Хелперы рендера */
+function toMMSS(total){ const n=Number(total); if(!isFinite(n)) return ''; const m=Math.floor(n/60),s=n%60; return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`; }
+function norm(v){ return (v===null||v===undefined||String(v).trim()==='') ? '—' : String(v); }
+function pickStatus(key, raw){
+  return 'kf-mute';
+}
+ 
+function card(title, value, hint){
+  const cls = pickStatus(title, value);
+  let shown = value;
+  if ((title==='RT'||title==='ART') && value && value!=='—') shown = toMMSS(Number(value));
+  return `<div class="kf-card ${cls}"><div class="kf-title">${title}${hint?` <span class="kf-chip">${hint}</span>`:''}</div><div class="kf-val">${norm(shown)}</div></div>`;
+}
+/** Локализованный вывод времени обновления */
+function fmtLocal(iso){
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('ru-RU', { hour12: false });
+}
+
+/* ==== Мини-слот-машина (казино) ==== */
+function initSlotMachine(){
+  const root = document.getElementById('slot-machine');
+  if (!root) return;
+
+  const emojis = ['🍒','🍋','⭐','💎','🍀','🔥'];
+  const reels = [
+    root.querySelector('#slot-reel-1'),
+    root.querySelector('#slot-reel-2'),
+    root.querySelector('#slot-reel-3')
+  ];
+  const btn = root.querySelector('#slot-spin-btn');
+  const res = root.querySelector('#slot-result');
+
+  if (!btn || !reels[0] || !reels[1] || !reels[2]) return;
+
+  function randEmoji(){
+    return emojis[Math.floor(Math.random() * emojis.length)];
+  }
+
+  function spinReel(reel, delay){
+    return new Promise(resolve=>{
+      reel.classList.add('spin');
+      let ticks = 0;
+      const maxTicks = 12 + Math.floor(Math.random() * 6);
+      const timer = setInterval(()=>{
+        reel.textContent = randEmoji();
+        ticks++;
+        if (ticks >= maxTicks){
+          clearInterval(timer);
+          reel.classList.remove('spin');
+          resolve(reel.textContent);
+        }
+      }, delay);
+    });
+  }
+
+  async function spinAll(){
+    btn.disabled = true;
+    res.textContent = 'Крутим…';
+
+    const [a,b,c] = await Promise.all([
+      spinReel(reels[0],60),
+      spinReel(reels[1],70),
+      spinReel(reels[2],80)
+    ]);
+
+    if (a===b && b===c){
+      res.textContent = 'ВЛАДЛЕН ИДИ РАБОТАТЬ!!!!!! ' + a + a + a;
+    } else if (a===b || b===c || a===c){
+      res.textContent = 'Две одинаковые — тоже неплохо 😉';
+    } else {
+      res.textContent = 'В этот раз не повезло 🙃';
+    }
+    btn.disabled = false;
+  }
+
+  btn.onclick = spinAll;
+}
+
+/** Основная логика */
+async function showForecast(){
+  const code = getUserCode();
+  const body = document.getElementById('k-forecast-body');
+  kModal(true);
+
+  if (!code){
+    body.innerHTML = `<div class="kf-card kf-bad"><div class="kf-title">Ошибка</div><div class="kf-val">Авторизуйтесь в системе</div></div>`;
+    return;
+  }
+  body.innerHTML = `<div class="kf-card kf-mute"><div class="kf-title">Загрузка</div><div class="kf-val">…</div></div>`;
+
+  try{
+    const u = new URL(APP_URL);
+    u.searchParams.set('api','personal');
+    u.searchParams.set('code', code);
+
+    const res = await fetch(u.toString(), {method:'GET', credentials:'omit'});
+    const js  = await res.json();
+    if (!js.ok) throw new Error(js.error || 'API error');
+
+    const m = js.metrics || {};
+    const tiles = [
+      card('Csat',            m['Csat'], 'оценка'),
+      card('Capacity',        m['Capacity'], ''),
+      card('Закрыто чатов',   m['Закрыто чатов'], ''),
+      card('RT',              m['RT'], 'сек'),
+      card('ART',             m['ART'], 'сек'),
+      card('Звонки',          m['Звонки'], 'исход + вход'),
+      card('Баллы',           m['Баллы'], 'предварительно без ОКК'),
+      card('Место',           m['Место'], 'предварительно')      
+    ];
+
+    body.innerHTML = `
+      <div class="kf-row" style="margin-bottom:10px">
+        <div class="kf-chip">Оператор</div>
+        <div style="font-weight:700">${js.operator}</div>
+      </div>
+      <div class="kf-grid">${tiles.join('')}</div>
+      <div class="kf-row" style="margin-top:12px">
+        <div class="kf-chip">Дата обновления</div>
+        <div>${fmtLocal(js.updatedAt)}</div>
+      </div>
+      <div id="slot-machine">
+        <div class="slot-title">Кайтен слоты 🎰</div>
+        <div class="slot-reels">
+          <div class="slot-reel" id="slot-reel-1">❔</div>
+          <div class="slot-reel" id="slot-reel-2">❔</div>
+          <div class="slot-reel" id="slot-reel-3">❔</div>
+        </div>
+        <button id="slot-spin-btn">Крутить</button>
+        <div class="slot-result" id="slot-result"></div>
+      </div>
+    `;
+
+    initSlotMachine();
+  }catch(err){
+    body.innerHTML = `<div class="kf-card kf-bad"><div class="kf-title">Ошибка</div><div class="kf-val">${err.message}</div></div>`;
+  }
+}
+</script>
 </body>
 </html>
