@@ -53,3 +53,9 @@ CREATE TABLE IF NOT EXISTS dailyReports (
   totalWait INTEGER,
   totalLunch INTEGER
 );
+
+CREATE TABLE IF NOT EXISTS settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT
+);
+
