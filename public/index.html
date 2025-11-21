@@ -68,6 +68,42 @@
     .kf-mute .kf-val{color:#9fb2d1}
     .kf-row{display:flex;align-items:center;justify-content:space-between}
 
+        /* Плашка-переключатель над колонкой "Перерыв" */
+    .break-toggle{
+      margin:6px 8px 8px;
+      padding:6px 12px;
+      border-radius:12px;
+      font-size:13px;
+      font-weight:600;
+      cursor:pointer;
+      border:1px solid var(--btn-border);
+      background:var(--card);
+      color:var(--text);
+      opacity:.9;
+      transition:all .18s ease;
+      box-shadow:0 2px 6px rgba(0,0,0,.15);
+    }
+    .break-toggle:hover{
+      opacity:1;
+      background:var(--btn-hover);
+    }
+    .break-toggle--single{
+      background:#3b2f24;
+      border-color:#5a4634;
+      color:#f2d6b1;
+    }
+    .break-toggle--double{
+      background:#1f3329;
+      border-color:#385f4a;
+      color:#c9f5d8;
+    }
+    .break-toggle--single:hover{
+      background:#4b3e31;
+    }
+    .break-toggle--double:hover{
+      background:#2c4b3b;
+    }
+
     /* ===== Мини-казино в модалке прогноза ===== */
     #slot-machine{
       margin-top:16px;
@@ -263,10 +299,28 @@ document.getElementById('btnTheme').onclick = ()=>{
 
 const state = {
   statuses:[], cards:[], session:null, serverOffsetMs:0, page:'board',
-  lastColumnsHash:{}
+  lastColumnsHash:{},
+  breakMode:'single'
 };
 const MAX_DATAURL_LEN = 49000;
+  
+function applyBreakToggleState(el){
+  if (!el) return;
+  const mode = el.dataset.mode === 'double' ? 'double' : 'single';
+  el.dataset.mode = mode;
 
+  if (mode === 'single') {
+    el.textContent = 'Перерыв: по одному';
+    el.classList.add('break-toggle--single');
+    el.classList.remove('break-toggle--double');
+  } else {
+    el.textContent = 'Перерыв: по двое';
+    el.classList.add('break-toggle--double');
+    el.classList.remove('break-toggle--single');
+  }
+}
+
+  
 // ============ API helper ============
 async function api(url, opts={}){
   const r = await fetch(url, Object.assign({headers:{'Content-Type':'application/json'}}, opts));
@@ -336,9 +390,16 @@ async function load(){
 }
 
 function render(data){
-  state.statuses = data.statuses||[]; state.cards = data.cards||[];
+  state.statuses = data.statuses||[];
+  state.cards    = data.cards    || [];
+
+  if (data && data.breakMode) {
+    state.breakMode = (data.breakMode === 'double') ? 'double' : 'single';
+  }
 
   const byStatus = {}; state.statuses.forEach(s=>byStatus[s]=[]);
+  ...
+
   (state.cards||[]).forEach(c => (byStatus[c.status]||(byStatus[c.status]=[])).push(c));
   state.statuses.forEach(s=>{
     (byStatus[s]||[]).sort((a,b)=>{
@@ -372,12 +433,16 @@ function renderSummary(byStatus){
 function hashColumn(cards){ return (cards||[]).map(c=>c.id+':' + (c.statusSince||'')).join('|'); }
 function renderColumns(byStatus){
   const root = document.getElementById('appBoard');
+
   if (!root.dataset.ready){
     root.innerHTML='';
     state.statuses.forEach(s=>{
-      const col = document.createElement('div'); col.className='col'; col.dataset.status=s;
+      const col = document.createElement('div');
+      col.className='col';
+      col.dataset.status=s;
       col.innerHTML = `<h3 style="margin:6px 8px 10px">${s} <span class="count">0</span></h3><div class="drop" data-status="${s}"></div>`;
-      enableDrop(col.querySelector('.drop')); root.appendChild(col);
+      enableDrop(col.querySelector('.drop'));
+      root.appendChild(col);
     });
 
     // Плашка-переключатель над колонкой "Перерыв"
@@ -386,47 +451,61 @@ function renderColumns(byStatus){
       const header = breakCol.querySelector('h3');
       const toggle = document.createElement('button');
       toggle.type = 'button';
-      toggle.className = 'break-toggle break-toggle--single';
-      toggle.dataset.mode = 'single'; // single = по одному, double = по двое
+      toggle.className = 'break-toggle';
+      toggle.dataset.mode = state.breakMode || 'single';
 
-      const updateBreakToggle = () => {
-        if (toggle.dataset.mode === 'single') {
-          toggle.textContent = 'Перерыв: по одному';
-          toggle.classList.add('break-toggle--single');
-          toggle.classList.remove('break-toggle--double');
-        } else {
-          toggle.textContent = 'Перерыв: по двое';
-          toggle.classList.add('break-toggle--double');
-          toggle.classList.remove('break-toggle--single');
+      applyBreakToggleState(toggle);
+
+      toggle.addEventListener('click', async () => {
+        const newMode = (toggle.dataset.mode === 'single') ? 'double' : 'single';
+        toggle.dataset.mode = newMode;
+        state.breakMode = newMode;
+        applyBreakToggleState(toggle);
+
+        try{
+          if (state.session?.token){
+            await api('/api/breakMode', {
+              method:'POST',
+              body: JSON.stringify({ mode:newMode, token: state.session.token })
+            });
+          }
+        }catch(e){
+          console.warn('breakMode save failed', e);
         }
-      };
-
-      updateBreakToggle();
-
-      toggle.addEventListener('click', () => {
-        toggle.dataset.mode = toggle.dataset.mode === 'single' ? 'double' : 'single';
-        updateBreakToggle();
       });
 
-      // вставляем плашку над заголовком колонки "Перерыв"
       if (header) breakCol.insertBefore(toggle, header);
       else breakCol.insertBefore(toggle, breakCol.firstChild);
     }
 
     root.dataset.ready='1';
   }
+
+  // на каждый рендер подтягиваем актуальное состояние из state.breakMode
+  const toggle = root.querySelector('.break-toggle');
+  if (toggle){
+    if (toggle.dataset.mode !== (state.breakMode || 'single')){
+      toggle.dataset.mode = state.breakMode || 'single';
+    }
+    applyBreakToggleState(toggle);
+  }
+
   state.statuses.forEach(s=>{
-    const cards = byStatus[s]||[]; const newHash = hashColumn(cards);
-    const col = root.querySelector(`.col[data-status="${s.replace(/"/g,'\\"')}"]`); if (!col) return;
+    const cards = byStatus[s]||[];
+    const newHash = hashColumn(cards);
+    const col = root.querySelector(`.col[data-status="${s.replace(/"/g,'\\"')}"]`);
+    if (!col) return;
     col.querySelector('.count').textContent = String(cards.length);
     if (state.lastColumnsHash[s] === newHash) return;
     state.lastColumnsHash[s] = newHash;
-    const drop = col.querySelector('.drop'); drop.innerHTML='';
+    const drop = col.querySelector('.drop');
+    drop.innerHTML='';
     const frag = document.createDocumentFragment();
     cards.forEach(c => frag.appendChild(makeCard(c)));
     drop.appendChild(frag);
   });
 }
+
 function detectShiftClass(shift){ const s=String(shift||'').toLowerCase(); if(s==='5/2')return'shift-52'; if(s==='2/2')return'shift-22'; return''; }
 function makeCard(c){
   const el = document.createElement('div');
