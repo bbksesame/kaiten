@@ -1,9 +1,12 @@
 import { STATUSES } from '../_util.js';
 
 export async function onRequestGet({ env }) {
-  const { results } = await env.DB.prepare('SELECT * FROM operators').all();
+  // Операторы
+  const { results } = await env.DB
+    .prepare('SELECT * FROM operators')
+    .all();
 
-  const cards = (results||[]).map(r => ({
+  const cards = (results || []).map(r => ({
     id: r.id,
     name: r.name,
     teamlead: r.teamlead || '',
@@ -19,20 +22,26 @@ export async function onRequestGet({ env }) {
       totalLunch: r.totalLunch || 0,
     },
     shiftStart: r.shiftStart || '',
-    shift: r.shift || '',
-    workHours: r.workHours || '',
-    images: (() => { try { return JSON.parse(r.images || '[]'); } catch { return []; } })()
+    shift:      r.shift      || '',
+    workHours:  r.workHours  || '',
+    images: (() => {
+      try {
+        return JSON.parse(r.images || '[]');
+      } catch {
+        return [];
+      }
+    })(),
   }));
 
-  // читаем глобальный режим перерыва из таблицы settings
+  // Режим плашки из таблицы settings (key = 'breakMode')
   let breakMode = 'single';
   try {
-    const { results: settingsRows } = await env.DB
+    const { results: setRows } = await env.DB
       .prepare('SELECT value FROM settings WHERE key=?')
       .bind('breakMode')
       .all();
 
-    const row = settingsRows && settingsRows[0];
+    const row = setRows && setRows[0];
     if (row && row.value === 'double') {
       breakMode = 'double';
     }
@@ -44,6 +53,6 @@ export async function onRequestGet({ env }) {
     statuses: STATUSES,
     cards,
     serverNowIso: new Date().toISOString(),
-    breakMode
+    breakMode,
   });
 }
