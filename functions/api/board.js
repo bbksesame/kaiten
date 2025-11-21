@@ -24,5 +24,26 @@ export async function onRequestGet({ env }) {
     images: (() => { try { return JSON.parse(r.images || '[]'); } catch { return []; } })()
   }));
 
-  return Response.json({ statuses: STATUSES, cards, serverNowIso: new Date().toISOString() });
+  // читаем глобальный режим перерыва из таблицы settings
+  let breakMode = 'single';
+  try {
+    const { results: settingsRows } = await env.DB
+      .prepare('SELECT value FROM settings WHERE key=?')
+      .bind('breakMode')
+      .all();
+
+    const row = settingsRows && settingsRows[0];
+    if (row && row.value === 'double') {
+      breakMode = 'double';
+    }
+  } catch (e) {
+    // если таблицы ещё нет или другая ошибка — просто оставляем single
+  }
+
+  return Response.json({
+    statuses: STATUSES,
+    cards,
+    serverNowIso: new Date().toISOString(),
+    breakMode
+  });
 }
