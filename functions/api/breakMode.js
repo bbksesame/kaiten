@@ -1,6 +1,6 @@
 import { json, requireSession } from '../_util.js';
 
-// GET /api/breakMode — отдать текущий режим (на всякий случай, вдруг пригодится)
+// GET /api/breakMode — просто вернуть текущий режим (опционально, но пусть будет)
 export async function onRequestGet({ env }) {
   try {
     const { results } = await env.DB
@@ -17,13 +17,17 @@ export async function onRequestGet({ env }) {
   }
 }
 
-// POST /api/breakMode — сохранить новый режим
+// POST /api/breakMode — сменить режим
 export async function onRequestPost({ request, env }) {
-  const body = await json(request);
-  const { mode, token } = body || {};
+  const body  = await json(request);
+  const mode  = body?.mode;
+  const token = body?.token || '';
 
+  // Нажимать могут все залогиненные
   const sess = await requireSession(env, token);
-  if (!sess) return new Response('INVALID_SESSION', { status: 401 });
+  if (!sess) {
+    return new Response('INVALID_SESSION', { status: 401 });
+  }
 
   const normalized = mode === 'double' ? 'double' : 'single';
 
@@ -40,3 +44,4 @@ export async function onRequestPost({ request, env }) {
     return new Response('ERROR', { status: 500 });
   }
 }
+
