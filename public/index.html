@@ -68,42 +68,6 @@
     .kf-mute .kf-val{color:#9fb2d1}
     .kf-row{display:flex;align-items:center;justify-content:space-between}
 
-        /* Плашка-переключатель над колонкой "Перерыв" */
-    .break-toggle{
-      margin:6px 8px 8px;
-      padding:6px 12px;
-      border-radius:12px;
-      font-size:13px;
-      font-weight:600;
-      cursor:pointer;
-      border:1px solid var(--btn-border);
-      background:var(--card);
-      color:var(--text);
-      opacity:.9;
-      transition:all .18s ease;
-      box-shadow:0 2px 6px rgba(0,0,0,.15);
-    }
-    .break-toggle:hover{
-      opacity:1;
-      background:var(--btn-hover);
-    }
-    .break-toggle--single{
-      background:#3b2f24;
-      border-color:#5a4634;
-      color:#f2d6b1;
-    }
-    .break-toggle--double{
-      background:#1f3329;
-      border-color:#385f4a;
-      color:#c9f5d8;
-    }
-    .break-toggle--single:hover{
-      background:#4b3e31;
-    }
-    .break-toggle--double:hover{
-      background:#2c4b3b;
-    }
-
     /* ===== Мини-казино в модалке прогноза ===== */
     #slot-machine{
       margin-top:16px;
@@ -398,7 +362,6 @@ function render(data){
   }
 
   const byStatus = {}; state.statuses.forEach(s=>byStatus[s]=[]);
-  ...
 
   (state.cards||[]).forEach(c => (byStatus[c.status]||(byStatus[c.status]=[])).push(c));
   state.statuses.forEach(s=>{
