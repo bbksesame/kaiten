@@ -122,9 +122,29 @@
       font-size:12px;
       opacity:.9;
     }
+
+    /* ===== Snow Overlay (added) ===== */
+    /* canvas covers viewport, pointer-events:none so it doesn't block clicks */
+    #kaiten-snow {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999; /* change if you need it below modals */
+      mix-blend-mode: screen;
+      opacity: 0.9;
+    }
+    @media (max-width: 600px) {
+      #kaiten-snow { display: none; }
+    }
   </style>
 </head>
 <body data-theme="dark">
+
+<!-- Snow overlay canvas (inserted) -->
+<canvas id="kaiten-snow" aria-hidden="true"></canvas>
 
 <!-- LOGIN -->
 <div id="login">
@@ -144,13 +164,13 @@
   <header>
     <div>Вы: <span id="who">…</span> <span class="badge" id="roleBadge">Оператор</span></div>
     <div class="spacer"></div>
+    <button id="btnSnow" class="btn-chip">Снег: вкл</button>
     <button id="btnTheme" class="btn-chip" title="Переключить тему">Тема: тёмная</button>
     <button id="btnNewDay" class="btn-chip hidden">Новый день</button>
     <button id="btnReports" class="btn-chip hidden">Отчёты</button>
 
     <!-- Кнопка ПРОГНОЗ в правом верхнем углу -->
     <button id="k-forecast-btn" class="btn-chip">Прогноз</button>
-
     <button id="btnLogout" class="btn-chip">Выйти</button>
   </header>
   <div id="summary" class="summarybar hidden"></div>
@@ -331,7 +351,7 @@ function renderColumns(byStatus){
     root.innerHTML='';
     state.statuses.forEach(s=>{
       const col = document.createElement('div'); col.className='col'; col.dataset.status=s;
-      col.innerHTML = `<h3 style="margin:6px 8px 10px">${s} <span class="count">0</span></h3><div class="drop" data-status="${s}"></div>`;
+      col.innerHTML = `<h3.style="margin:6px 8px 10px">${s} <span class="count">0</span></h3><div class="drop" data-status="${s}"></div>`;
       enableDrop(col.querySelector('.drop')); root.appendChild(col);
     });
     root.dataset.ready='1';
@@ -821,5 +841,194 @@ async function showForecast(){
   }
 }
 </script>
+
+<!-- Snow script (robust) -->
+<script>
+(function(){
+  // Настройки
+  let MAX_PARTICLES = 200;   // увеличьте, если нужен плотнее снег
+  const MAX_SIZE = 3;        // макс радиус в px
+  const SPEED = 1;           // множитель скорости
+  const WIND = 0.6;          // боковой дрейф
+  const OPACITY = 0.9;
+
+  const canvas = document.getElementById('kaiten-snow');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  // Частицы
+  let flakes = [];
+  let animating = true;
+  let lastTs = performance.now();
+
+  // Универсальный ресайз: ставим реальные пиксели и масштабируем контекст,
+  // но ОЧИЩАЕМ БУФЕР в device-pixels перед установкой трансформации,
+  // чтобы избежать артефактов при изменении DPR/zoom.
+  function doResize(){
+    const dpr = window.devicePixelRatio || 1;
+    // Установим реальные размеры в device pixels
+    const cssW = Math.max(1, Math.round(window.innerWidth));
+    const cssH = Math.max(1, Math.round(window.innerHeight));
+    const dpW = Math.ceil(cssW * dpr);
+    const dpH = Math.ceil(cssH * dpr);
+
+    // Если ничего не поменялось — выходим
+    if (canvas.width === dpW && canvas.height === dpH && canvas.style.width === cssW + 'px') return;
+
+    // Очищаем полный device-pixel буфер (сбрасываем трансформ перед clear)
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,canvas.width || 0, canvas.height || 0);
+
+    canvas.width = dpW;
+    canvas.height = dpH;
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+
+    // Настраиваем контекст так, чтобы рисовать в CSS-пикселях (удобнее)
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Если область стала больше — добавим частиц, если меньше — урежем
+    if (flakes.length < MAX_PARTICLES){
+      while (flakes.length < MAX_PARTICLES) flakes.push(createFlake(true));
+    } else if (flakes.length > MAX_PARTICLES){
+      flakes = flakes.slice(0, MAX_PARTICLES);
+    }
+  }
+
+  // Обработчик resize + ResizeObserver на документ (ловит изменения масштаба / layout)
+  const ro = new ResizeObserver(() => {
+    // небольшой таймаут, чтобы browser успел пересчитать layout
+    setTimeout(doResize, 0);
+  });
+  try { ro.observe(document.documentElement); } catch(e){ /* ignore */ }
+  window.addEventListener('resize', doResize);
+  window.addEventListener('orientationchange', doResize);
+
+  // Отключаем на маленьких экранах (как и раньше)
+  function maybeDisableOnMobile(){
+    if (window.innerWidth < 600){
+      canvas.style.display = 'none';
+      animating = false;
+      return true;
+    } else {
+      canvas.style.display = '';
+      animating = true;
+      return false;
+    }
+  }
+  if (maybeDisableOnMobile()) return;
+
+  // Создаём частицу (координаты в CSS-пикселях)
+  function createFlake(randomY = false){
+    const x = Math.random() * window.innerWidth;
+    const y = randomY ? Math.random() * window.innerHeight : -10 - Math.random() * 100;
+    const size = Math.random() * (MAX_SIZE - 0.8) + 0.8;
+    const speed = (0.5 + Math.random() * 1.2) * SPEED;
+    const drift = (Math.random() * 2 - 1) * WIND;
+    const opacity = Math.random() * (OPACITY - 0.2) + 0.2;
+    return { x, y, size, speed, drift, opacity, sway: Math.random() * Math.PI * 2 };
+  }
+
+  // Инициализация
+  function initParticles(){
+    flakes = [];
+    for (let i = 0; i < MAX_PARTICLES; i++) flakes.push(createFlake(true));
+  }
+
+  // Слежение за изменением плотности в runtime (если захотите)
+  window.kaitenSnow = Object.assign(window.kaitenSnow || {}, {
+    setDensity(n){
+      const parsed = Math.max(0, Math.min(800, Math.floor(Number(n) || 0)));
+      MAX_PARTICLES = parsed;
+      // скорректируем массив частиц сразу
+      if (flakes.length < MAX_PARTICLES){
+        while (flakes.length < MAX_PARTICLES) flakes.push(createFlake(true));
+      } else if (flakes.length > MAX_PARTICLES){
+        flakes = flakes.slice(0, MAX_PARTICLES);
+      }
+    },
+    enable(){
+      if (canvas.style.display === 'none') canvas.style.display = '';
+      if (!animating){ animating = true; lastTs = performance.now(); requestAnimationFrame(loop); }
+    },
+    disable(){
+      canvas.style.display = 'none';
+      animating = false;
+    }
+  });
+
+  // Главный цикл рисования
+  function loop(ts){
+    if (!animating) return;
+    const dt = Math.min(0.05, (ts - lastTs) / 1000); // защитим от больших дельт
+    lastTs = ts;
+
+    // Перед каждым кадром убеждаемся, что размеры актуальны (ловим zoom/resize)
+    doResize();
+
+    // Очистка: поскольку мы установили transform = scale(dpr), сейчас координаты — CSS px
+    ctx.clearRect(0, 0, Math.ceil(window.innerWidth), Math.ceil(window.innerHeight));
+
+    for (let i = 0; i < flakes.length; i++){
+      const f = flakes[i];
+      // лёгкое "колебание" + дрейф по ветру
+      f.sway += dt * (0.5 + Math.random() * 0.8);
+      f.x += Math.sin(f.sway) * (0.3 + Math.random() * 0.6) * f.size * 0.3;
+      f.x += f.drift * dt * 60 * 0.1;
+      f.y += f.speed * dt * 60 * 0.8;
+
+      // Рисуем
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255,255,255,${f.opacity})`;
+      ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Если вышли за пределы — пересоздаём корректно по текущим размерaм
+      if (f.y - f.size > window.innerHeight + 50 || f.x < -80 || f.x > window.innerWidth + 80){
+        flakes[i] = createFlake(false);
+      }
+    }
+
+    requestAnimationFrame(loop);
+  }
+
+  // Инициализация и старт
+  initParticles();
+  doResize();
+  lastTs = performance.now();
+  requestAnimationFrame(loop);
+})();
+</script>
+<script>
+// Переключатель снега
+(function(){
+  const btn = document.getElementById('btnSnow');
+  if (!btn) return;
+
+  // читаем сохранённое состояние
+  let snowEnabled = localStorage.getItem('kaiten_snow') !== 'off';
+
+  function apply(){
+    if (snowEnabled){
+      btn.textContent = 'Снег: вкл';
+      if (window.kaitenSnow?.enable) window.kaitenSnow.enable();
+    } else {
+      btn.textContent = 'Снег: выкл';
+      if (window.kaitenSnow?.disable) window.kaitenSnow.disable();
+    }
+  }
+
+  btn.onclick = () => {
+    snowEnabled = !snowEnabled;
+    localStorage.setItem('kaiten_snow', snowEnabled ? 'on' : 'off');
+    apply();
+  };
+
+  // применяем при загрузке
+  apply();
+})();
+</script>
+
+
 </body>
 </html>
