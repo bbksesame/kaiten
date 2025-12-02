@@ -170,6 +170,7 @@
 
     <!-- Кнопка ПРОГНОЗ в правом верхнем углу -->
     <button id="k-forecast-btn" class="btn-chip">Прогноз</button>
+    <button id="btnSnow" class="btn-chip">Снег: вкл</button>
 
     <button id="btnLogout" class="btn-chip">Выйти</button>
   </header>
@@ -997,6 +998,35 @@ async function showForecast(){
   doResize();
   lastTs = performance.now();
   requestAnimationFrame(loop);
+})();
+</script>
+<script>
+// Переключатель снега
+(function(){
+  const btn = document.getElementById('btnSnow');
+  if (!btn) return;
+
+  // читаем сохранённое состояние
+  let snowEnabled = localStorage.getItem('kaiten_snow') !== 'off';
+
+  function apply(){
+    if (snowEnabled){
+      btn.textContent = 'Снег: вкл';
+      if (window.kaitenSnow?.enable) window.kaitenSnow.enable();
+    } else {
+      btn.textContent = 'Снег: выкл';
+      if (window.kaitenSnow?.disable) window.kaitenSnow.disable();
+    }
+  }
+
+  btn.onclick = () => {
+    snowEnabled = !snowEnabled;
+    localStorage.setItem('kaiten_snow', snowEnabled ? 'on' : 'off');
+    apply();
+  };
+
+  // применяем при загрузке
+  apply();
 })();
 </script>
 
