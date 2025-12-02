@@ -842,40 +842,83 @@ async function showForecast(){
 }
 </script>
 
-<!-- Snow script (inserted) -->
+<!-- Snow script (robust) -->
 <script>
 (function(){
-  // Config — изменяй при необходимости
-  const MAX_PARTICLES = 80;   // плотность снежинок
-  const MAX_SIZE = 3;         // макс радиус (px)
-  const SPEED = 1;            // общий множитель скорости
+  // Настройки
+  let MAX_PARTICLES = 120;   // увеличьте, если нужен плотнее снег
+  const MAX_SIZE = 3;        // макс радиус в px
+  const SPEED = 1;           // множитель скорости
   const WIND = 0.6;          // боковой дрейф
-  const OPACITY = 0.9;        // макс непрозрачность
+  const OPACITY = 0.9;
 
   const canvas = document.getElementById('kaiten-snow');
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  function resize(){
+  // Частицы
+  let flakes = [];
+  let animating = true;
+  let lastTs = performance.now();
+
+  // Универсальный ресайз: ставим реальные пиксели и масштабируем контекст,
+  // но ОЧИЩАЕМ БУФЕР в device-pixels перед установкой трансформации,
+  // чтобы избежать артефактов при изменении DPR/zoom.
+  function doResize(){
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = Math.ceil(window.innerWidth * dpr);
-    canvas.height = Math.ceil(window.innerHeight * dpr);
-    canvas.style.width = window.innerWidth + 'px';
-    canvas.style.height = window.innerHeight + 'px';
+    // Установим реальные размеры в device pixels
+    const cssW = Math.max(1, Math.round(window.innerWidth));
+    const cssH = Math.max(1, Math.round(window.innerHeight));
+    const dpW = Math.ceil(cssW * dpr);
+    const dpH = Math.ceil(cssH * dpr);
+
+    // Если ничего не поменялось — выходим
+    if (canvas.width === dpW && canvas.height === dpH && canvas.style.width === cssW + 'px') return;
+
+    // Очищаем полный device-pixel буфер (сбрасываем трансформ перед clear)
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.clearRect(0,0,canvas.width || 0, canvas.height || 0);
+
+    canvas.width = dpW;
+    canvas.height = dpH;
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+
+    // Настраиваем контекст так, чтобы рисовать в CSS-пикселях (удобнее)
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Если область стала больше — добавим частиц, если меньше — урежем
+    if (flakes.length < MAX_PARTICLES){
+      while (flakes.length < MAX_PARTICLES) flakes.push(createFlake(true));
+    } else if (flakes.length > MAX_PARTICLES){
+      flakes = flakes.slice(0, MAX_PARTICLES);
+    }
   }
-  resize();
-  window.addEventListener('resize', resize);
 
-  // Отключаем на мобильных для производительности
-  if (window.innerWidth < 600){
-    canvas.style.display = 'none';
-    return;
+  // Обработчик resize + ResizeObserver на документ (ловит изменения масштаба / layout)
+  const ro = new ResizeObserver(() => {
+    // небольшой таймаут, чтобы browser успел пересчитать layout
+    setTimeout(doResize, 0);
+  });
+  try { ro.observe(document.documentElement); } catch(e){ /* ignore */ }
+  window.addEventListener('resize', doResize);
+  window.addEventListener('orientationchange', doResize);
+
+  // Отключаем на маленьких экранах (как и раньше)
+  function maybeDisableOnMobile(){
+    if (window.innerWidth < 600){
+      canvas.style.display = 'none';
+      animating = false;
+      return true;
+    } else {
+      canvas.style.display = '';
+      animating = true;
+      return false;
+    }
   }
+  if (maybeDisableOnMobile()) return;
 
-  const flakes = [];
-  for (let i = 0; i < MAX_PARTICLES; i++) flakes.push(createFlake(true));
-
+  // Создаём частицу (координаты в CSS-пикселях)
   function createFlake(randomY = false){
     const x = Math.random() * window.innerWidth;
     const y = randomY ? Math.random() * window.innerHeight : -10 - Math.random() * 100;
@@ -886,51 +929,77 @@ async function showForecast(){
     return { x, y, size, speed, drift, opacity, sway: Math.random() * Math.PI * 2 };
   }
 
-  let last = performance.now();
-  let animating = true;
-  function loop(ts){
-    const dt = (ts - last) / 1000;
-    last = ts;
+  // Инициализация
+  function initParticles(){
+    flakes = [];
+    for (let i = 0; i < MAX_PARTICLES; i++) flakes.push(createFlake(true));
+  }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Слежение за изменением плотности в runtime (если захотите)
+  window.kaitenSnow = Object.assign(window.kaitenSnow || {}, {
+    setDensity(n){
+      const parsed = Math.max(0, Math.min(800, Math.floor(Number(n) || 0)));
+      MAX_PARTICLES = parsed;
+      // скорректируем массив частиц сразу
+      if (flakes.length < MAX_PARTICLES){
+        while (flakes.length < MAX_PARTICLES) flakes.push(createFlake(true));
+      } else if (flakes.length > MAX_PARTICLES){
+        flakes = flakes.slice(0, MAX_PARTICLES);
+      }
+    },
+    enable(){
+      if (canvas.style.display === 'none') canvas.style.display = '';
+      if (!animating){ animating = true; lastTs = performance.now(); requestAnimationFrame(loop); }
+    },
+    disable(){
+      canvas.style.display = 'none';
+      animating = false;
+    }
+  });
+
+  // Главный цикл рисования
+  function loop(ts){
+    if (!animating) return;
+    const dt = Math.min(0.05, (ts - lastTs) / 1000); // защитим от больших дельт
+    lastTs = ts;
+
+    // Перед каждым кадром убеждаемся, что размеры актуальны (ловим zoom/resize)
+    doResize();
+
+    // Очистка: поскольку мы установили transform = scale(dpr), сейчас координаты — CSS px
+    ctx.clearRect(0, 0, Math.ceil(window.innerWidth), Math.ceil(window.innerHeight));
 
     for (let i = 0; i < flakes.length; i++){
       const f = flakes[i];
+      // лёгкое "колебание" + дрейф по ветру
       f.sway += dt * (0.5 + Math.random() * 0.8);
       f.x += Math.sin(f.sway) * (0.3 + Math.random() * 0.6) * f.size * 0.3;
       f.x += f.drift * dt * 60 * 0.1;
       f.y += f.speed * dt * 60 * 0.8;
 
+      // Рисуем
       ctx.beginPath();
       ctx.fillStyle = `rgba(255,255,255,${f.opacity})`;
       ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
       ctx.fill();
 
-      if (f.y - f.size > window.innerHeight || f.x < -50 || f.x > window.innerWidth + 50){
+      // Если вышли за пределы — пересоздаём корректно по текущим размерaм
+      if (f.y - f.size > window.innerHeight + 50 || f.x < -80 || f.x > window.innerWidth + 80){
         flakes[i] = createFlake(false);
       }
     }
 
-    if (animating) requestAnimationFrame(loop);
+    requestAnimationFrame(loop);
   }
 
-  // Экспорт простого API для управления снегом
-  window.kaitenSnow = {
-    enable(){
-      canvas.style.display = '';
-      if (!animating){ animating = true; last = performance.now(); requestAnimationFrame(loop); }
-    },
-    disable(){ canvas.style.display = 'none'; animating = false; },
-    setDensity(n){
-      const count = Math.max(0, Math.min(300, Math.floor(n)));
-      while (flakes.length < count) flakes.push(createFlake(true));
-      while (flakes.length > count) flakes.pop();
-    }
-  };
-
+  // Инициализация и старт
+  initParticles();
+  doResize();
+  lastTs = performance.now();
   requestAnimationFrame(loop);
 })();
 </script>
+
 
 </body>
 </html>
