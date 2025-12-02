@@ -122,9 +122,29 @@
       font-size:12px;
       opacity:.9;
     }
+
+    /* ===== Snow Overlay (added) ===== */
+    /* canvas covers viewport, pointer-events:none so it doesn't block clicks */
+    #kaiten-snow {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 9999; /* change if you need it below modals */
+      mix-blend-mode: screen;
+      opacity: 0.9;
+    }
+    @media (max-width: 600px) {
+      #kaiten-snow { display: none; }
+    }
   </style>
 </head>
 <body data-theme="dark">
+
+<!-- Snow overlay canvas (inserted) -->
+<canvas id="kaiten-snow" aria-hidden="true"></canvas>
 
 <!-- LOGIN -->
 <div id="login">
@@ -331,7 +351,7 @@ function renderColumns(byStatus){
     root.innerHTML='';
     state.statuses.forEach(s=>{
       const col = document.createElement('div'); col.className='col'; col.dataset.status=s;
-      col.innerHTML = `<h3 style="margin:6px 8px 10px">${s} <span class="count">0</span></h3><div class="drop" data-status="${s}"></div>`;
+      col.innerHTML = `<h3.style="margin:6px 8px 10px">${s} <span class="count">0</span></h3><div class="drop" data-status="${s}"></div>`;
       enableDrop(col.querySelector('.drop')); root.appendChild(col);
     });
     root.dataset.ready='1';
@@ -821,5 +841,96 @@ async function showForecast(){
   }
 }
 </script>
+
+<!-- Snow script (inserted) -->
+<script>
+(function(){
+  // Config — изменяй при необходимости
+  const MAX_PARTICLES = 80;   // плотность снежинок
+  const MAX_SIZE = 3;         // макс радиус (px)
+  const SPEED = 1;            // общий множитель скорости
+  const WIND = 0.6;          // боковой дрейф
+  const OPACITY = 0.9;        // макс непрозрачность
+
+  const canvas = document.getElementById('kaiten-snow');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  function resize(){
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.ceil(window.innerWidth * dpr);
+    canvas.height = Math.ceil(window.innerHeight * dpr);
+    canvas.style.width = window.innerWidth + 'px';
+    canvas.style.height = window.innerHeight + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Отключаем на мобильных для производительности
+  if (window.innerWidth < 600){
+    canvas.style.display = 'none';
+    return;
+  }
+
+  const flakes = [];
+  for (let i = 0; i < MAX_PARTICLES; i++) flakes.push(createFlake(true));
+
+  function createFlake(randomY = false){
+    const x = Math.random() * window.innerWidth;
+    const y = randomY ? Math.random() * window.innerHeight : -10 - Math.random() * 100;
+    const size = Math.random() * (MAX_SIZE - 0.8) + 0.8;
+    const speed = (0.5 + Math.random() * 1.2) * SPEED;
+    const drift = (Math.random() * 2 - 1) * WIND;
+    const opacity = Math.random() * (OPACITY - 0.2) + 0.2;
+    return { x, y, size, speed, drift, opacity, sway: Math.random() * Math.PI * 2 };
+  }
+
+  let last = performance.now();
+  let animating = true;
+  function loop(ts){
+    const dt = (ts - last) / 1000;
+    last = ts;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < flakes.length; i++){
+      const f = flakes[i];
+      f.sway += dt * (0.5 + Math.random() * 0.8);
+      f.x += Math.sin(f.sway) * (0.3 + Math.random() * 0.6) * f.size * 0.3;
+      f.x += f.drift * dt * 60 * 0.1;
+      f.y += f.speed * dt * 60 * 0.8;
+
+      ctx.beginPath();
+      ctx.fillStyle = `rgba(255,255,255,${f.opacity})`;
+      ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (f.y - f.size > window.innerHeight || f.x < -50 || f.x > window.innerWidth + 50){
+        flakes[i] = createFlake(false);
+      }
+    }
+
+    if (animating) requestAnimationFrame(loop);
+  }
+
+  // Экспорт простого API для управления снегом
+  window.kaitenSnow = {
+    enable(){
+      canvas.style.display = '';
+      if (!animating){ animating = true; last = performance.now(); requestAnimationFrame(loop); }
+    },
+    disable(){ canvas.style.display = 'none'; animating = false; },
+    setDensity(n){
+      const count = Math.max(0, Math.min(300, Math.floor(n)));
+      while (flakes.length < count) flakes.push(createFlake(true));
+      while (flakes.length > count) flakes.pop();
+    }
+  };
+
+  requestAnimationFrame(loop);
+})();
+</script>
+
 </body>
 </html>
